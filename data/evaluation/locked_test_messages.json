@@ -1,0 +1,17 @@
+{
+  "dataset_version": "2.0-candidate", "purpose": "Frozen locked-test inputs. Ground-truth answers are deliberately stored separately and never exposed by the application API.",
+  "records": [
+    {"record_id":"EVAL-TEST-001","source_type":"synthetic","language_category":"English","input_message":"Send 3 box oil.","category":"configured box conversion","split":"locked_test"},
+    {"record_id":"EVAL-TEST-002","source_type":"synthetic","language_category":"Marathi/Hinglish limited","input_message":"Bhau, 3 dozen soap ani 1 bottle oil pathav.","category":"supported informal order","split":"locked_test"},
+    {"record_id":"EVAL-TEST-003","source_type":"synthetic","language_category":"English","input_message":"Send 2 bar classic soap.","category":"ambiguous product","split":"locked_test"},
+    {"record_id":"EVAL-TEST-004","source_type":"synthetic","language_category":"English","input_message":"Send 1 bottle moon juice.","category":"unknown product","split":"locked_test"},
+    {"record_id":"EVAL-TEST-005","source_type":"synthetic","language_category":"English","input_message":"Send oil.","category":"missing quantity and unit","split":"locked_test"},
+    {"record_id":"EVAL-TEST-006","source_type":"synthetic","language_category":"English","input_message":"Send 2 box shampoo.","category":"unconfigured box conversion","split":"locked_test"},
+    {"record_id":"EVAL-TEST-007","source_type":"synthetic","language_category":"English","input_message":"Send 2 dozen fresh soap.","category":"dozen conversion","split":"locked_test"},
+    {"record_id":"EVAL-TEST-008","source_type":"synthetic","language_category":"English","input_message":"Send 1 bottle unpriced cleaner.","category":"missing catalogue price","split":"locked_test"},
+    {"record_id":"EVAL-TEST-009","source_type":"synthetic","language_category":"English","input_message":"Send 2 bottles oil and 3 bars soap.","category":"multiple products","split":"locked_test"},
+    {"record_id":"EVAL-TEST-010","source_type":"synthetic","language_category":"English","input_message":"Maya 9123456789 needs 1 bottle oil.","category":"personal identifier present","split":"locked_test"},
+    {"record_id":"EVAL-TEST-011","source_type":"synthetic","language_category":"English","input_message":"Send 3 pieces soap.","category":"unsupported unit","split":"locked_test"},
+    {"record_id":"EVAL-TEST-012","source_type":"synthetic","language_category":"English","input_message":"Send 0 bar soap.","category":"invalid quantity","split":"locked_test"}
+  ]
+}

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KaryaMitra AI</title><link rel="stylesheet" href="/static/styles.css"></head>
+<body>
+  <header><h1>KaryaMitra AI</h1><p>Catalogue-verified draft orders · <strong>synthetic development data only</strong></p></header>
+  <main>
+    <section class="card"><h2>Order intake</h2><label for="records">Load synthetic message</label><select id="records"><option value="">Choose a development record…</option></select><label for="message">Customer message</label><textarea id="message" rows="4" placeholder="e.g. Send 2 box 500ml oil and 5 dozen soap."></textarea><div class="actions"><button id="process">Run actual backend pipeline</button><button id="correct" disabled>Save correction &amp; reprocess</button></div><p id="request-status" class="muted"></p></section>
+    <section class="card"><h2>Processing result</h2><div id="result" class="empty">Run an order to inspect real extraction, catalogue matching, validation, timing, and trace.</div><div class="actions"><button id="approve" disabled>Approve verified order</button><button id="reject" disabled>Reject order</button><a id="export" hidden>Export approved JSON</a></div></section>
+    <section class="card"><h2>Operational metrics</h2><pre id="metrics">Loading…</pre></section>
+    <section class="card"><h2>Evaluation readiness</h2><pre id="evaluation">Loading…</pre><p class="muted">Locked-test messages and ground truth are intentionally not available through this UI or API.</p></section>
+    <section class="card wide"><h2>Dataset Explorer — Catalogue</h2><input id="catalogue-search" placeholder="Search actual catalogue records"><div id="catalogue"></div></section>
+    <section class="card wide"><h2>Dataset Explorer — Messages</h2><div id="dataset"></div></section>
+  </main>
+  <footer>Rules parser v1.0 supports only documented development patterns. It does not claim general Marathi/Hinglish coverage, benchmark accuracy, or customer-data validation.</footer>
+  <script src="/static/app.js"></script>
+</body></html>
