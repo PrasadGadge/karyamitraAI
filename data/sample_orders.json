@@ -1,0 +1,57 @@
+[
+  {
+    "id": "SYN-DEV-001",
+    "message": "Please send 2 box 500ml oil and 5 dozen soap.",
+    "language": "English",
+    "category": "clear order",
+    "source": "synthetic development data",
+    "split": "development",
+    "annotation_status": "unverified demonstration annotation"
+  },
+  {
+    "id": "SYN-DEV-002",
+    "message": "Bhau, 2 box 500ml oil ani 5 dozen soap pathav.",
+    "language": "Marathi/Hinglish (limited supported pattern)",
+    "category": "supported informal order",
+    "source": "synthetic development data",
+    "split": "development",
+    "annotation_status": "unverified demonstration annotation"
+  },
+  {
+    "id": "SYN-DEV-003",
+    "message": "Send 3 classic soap.",
+    "language": "English",
+    "category": "ambiguous product",
+    "source": "synthetic development data",
+    "split": "development",
+    "annotation_status": "unannotated"
+  },
+  {
+    "id": "SYN-DEV-004",
+    "message": "Send 4 mystery drink.",
+    "language": "English",
+    "category": "unknown product",
+    "source": "synthetic development data",
+    "split": "development",
+    "annotation_status": "unannotated"
+  },
+  {
+    "id": "SYN-DEV-005",
+    "message": "Please send soap.",
+    "language": "English",
+    "category": "missing quantity",
+    "source": "synthetic development data",
+    "split": "development",
+    "annotation_status": "unannotated"
+  },
+  {
+    "id": "SYN-DEV-006",
+    "message": "Send 3 box small shampoo.",
+    "language": "English",
+    "category": "unsupported conversion",
+    "source": "synthetic development data",
+    "split": "development",
+    "annotation_status": "unannotated"
+  }
+]
+

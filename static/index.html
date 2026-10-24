@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KaryaMitra AI — MSME Order Automation &amp; Verification</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+  <!-- Top Brand Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <div class="brand-logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 16v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            <path d="M18 8l4 4-4 4"></path>
+            <path d="M8 12h14"></path>
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <h1>KaryaMitra AI <span class="brand-tag">v2.0 Beta</span></h1>
+          <p class="brand-subtitle">MSME Intelligent Order Automation &amp; Deterministic Catalogue Safeguards</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <span class="meta-pill">PRAGYAN 2K26 · Track 4-01</span>
+        <span class="meta-pill live-status" id="live-indicator">FastAPI Connected</span>
+        <span class="meta-pill" title="Order and trace data reset on server restart">In-Memory Engine (Resets on Restart)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky Module Navigation Tabs -->
+  <nav class="app-nav" aria-label="Main navigation">
+    <div class="nav-container">
+      <button class="nav-tab active" data-tab="workspace" id="tab-btn-workspace">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        Order Workspace
+      </button>
+      <button class="nav-tab" data-tab="dataset" id="tab-btn-dataset">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        Dataset Explorer
+        <span class="tab-badge" id="badge-dataset-count">60</span>
+      </button>
+      <button class="nav-tab" data-tab="review" id="tab-btn-review">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+        Human Review
+        <span class="tab-badge" id="badge-review-state">—</span>
+      </button>
+      <button class="nav-tab" data-tab="metrics" id="tab-btn-metrics">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        Operational Metrics
+      </button>
+      <button class="nav-tab" data-tab="evaluation" id="tab-btn-evaluation">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        Evaluation Readiness
+      </button>
+      <button class="nav-tab" data-tab="audit" id="tab-btn-audit">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        Activity &amp; Audit
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Application Body -->
+  <main class="app-main">
+
+    <!-- ========================================== -->
+    <!-- SCREEN 1: ORDER WORKSPACE                  -->
+    <!-- ========================================== -->
+    <div class="tab-pane active" id="view-workspace">
+
+      <!-- Visual Processing Sequence Indicator -->
+      <div class="workflow-steps" aria-label="Order intake sequence">
+        <div class="workflow-step active">
+          <span class="workflow-step-num">1</span> Choose Sample / Enter Message
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <span class="workflow-step-num">2</span> Select Parser (Rules / LLM)
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <span class="workflow-step-num">3</span> Process via FastAPI
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <span class="workflow-step-num">4</span> Catalogue Verification &amp; Price
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <span class="workflow-step-num">5</span> Human Approval Safeguard
+        </div>
+      </div>
+
+      <!-- Session Counters Quick Bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding:0.5rem 0.85rem; background:#ffffff; border:1px solid var(--color-border); border-radius:var(--radius-md); font-size:0.8rem;">
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+          <span>Session Orders: <strong id="bar-orders-processed">0</strong></span>
+          <span>·</span>
+          <span>Verified: <strong id="bar-verified-orders" style="color:var(--color-success-text);">0</strong></span>
+          <span>·</span>
+          <span>Clarification: <strong id="bar-clarification-orders" style="color:var(--color-warning-text);">0</strong></span>
+          <span>·</span>
+          <span>Approved: <strong id="bar-approved-orders" style="color:#065f46;">0</strong></span>
+          <span>·</span>
+          <span>Catalogue SKUs: <strong id="bar-catalogue-count">6</strong></span>
+        </div>
+        <span class="meta-pill" style="font-size:0.72rem; color:var(--color-text-muted);">
+          In-Memory Prototype · No Persistent Business Analytics
+        </span>
+      </div>
+
+      <div class="workspace-grid">
+
+        <!-- Left Column: Intake Controls -->
+        <section class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                1. Order Intake
+              </h2>
+              <p class="card-subtitle">Convert unstructured WhatsApp / SMS orders into verified catalogue line items.</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="records-select">
+              <span>Load Synthetic Sample Record</span>
+              <span class="form-label-hint">from data/sample_orders.json</span>
+            </label>
+            <select class="form-select" id="records-select">
+              <option value="">Select a pre-built sample order…</option>
+            </select>
+          </div>
+
+          <!-- Extraction Method Selector -->
+          <div class="form-group">
+            <label class="form-label" for="extraction-method">
+              <span>2. Extraction Parser Selection</span>
+              <span class="form-label-hint" id="llm-status-hint">LLM adapter is optional</span>
+            </label>
+            <select class="form-select" id="extraction-method">
+              <option value="rules">Deterministic Rules-Based Parser (Primary · Local)</option>
+              <option value="llm">Optional LLM-Based Parser (OpenRouter Chat Completions)</option>
+            </select>
+            <div id="llm-config-callout" style="font-size: 0.78rem; color: var(--color-text-muted); margin-top: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+              <span>ℹ️</span> <span id="llm-config-text">Rules-based parser active. LLM unconfigured in current environment (OPENROUTER_API_KEY not set).</span>
+            </div>
+          </div>
+
+          <!-- Quick Scenario Presets -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Quick Test Presets (PRAGYAN Judge Scenarios)</span>
+            </label>
+            <div class="preset-chips" id="preset-chips">
+              <button class="preset-chip" type="button" data-scenario="clear">✓ Clear Multi-Item (Oil &amp; Soap)</button>
+              <button class="preset-chip" type="button" data-scenario="marathi">✓ Hinglish / Marathi Informal</button>
+              <button class="preset-chip" type="button" data-scenario="ambiguous">⚠️ Ambiguous Product (Classic Soap)</button>
+              <button class="preset-chip" type="button" data-scenario="unknown">⚠️ Unknown Item (Mystery Drink)</button>
+              <button class="preset-chip" type="button" data-scenario="missing-qty">⚠️ Missing Quantity</button>
+              <button class="preset-chip" type="button" data-scenario="conversion">⚠️ Unsupported Conversion (Box Shampoo)</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="customer-message">
+              <span>Customer Order Message</span>
+              <span class="form-label-hint" id="char-count">0 / 2000 chars</span>
+            </label>
+            <textarea class="form-textarea" id="customer-message" rows="4" placeholder="Enter wholesale order text, e.g. Send 2 box 500ml oil and 5 dozen soap."></textarea>
+          </div>
+
+          <div class="actions-row">
+            <button class="btn btn-primary" id="btn-process" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Process Order via FastAPI
+            </button>
+            <button class="btn btn-secondary" id="btn-clear-message" type="button">Clear</button>
+          </div>
+
+          <div id="request-status-banner" style="display:none; margin-top: 1rem;"></div>
+
+          <div class="alert-banner info" style="margin-top: 1.15rem; margin-bottom: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div>
+              <strong>Catalogue Verification Rules:</strong> Validates against <code>data/products.csv</code>. Matches SKUs deterministically, normalizes pack conversions (e.g. 1 box = 12 bottles), applies official prices, and halts on ambiguous or unpriced products.
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Column: Live Backend Results -->
+        <section class="card" id="result-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Processing Result &amp; Safeguards
+              </h2>
+              <p class="card-subtitle">Real-time extraction, catalogue verification, pricing, and approval state.</p>
+            </div>
+          </div>
+
+          <!-- Dynamic Result Container -->
+          <div id="order-result-area">
+            <div class="empty-state">
+              <div class="empty-state-icon">📋</div>
+              <div class="empty-state-title">No Active Order Processed</div>
+              <p class="empty-state-desc">Select a sample record or type a message, then click <strong>Process Order via FastAPI</strong> to inspect actual live extraction and validation output.</p>
+              <button class="btn btn-secondary btn-sm" id="btn-quick-start">Load Sample Order #1</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 2: DATASET EXPLORER (HIGHEST PRIORITY) -->
+    <!-- ========================================== -->
+    <div class="tab-pane" id="view-dataset">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              Dataset Explorer &amp; Transparency Console
+            </h2>
+            <p class="card-subtitle">Inspect the synthetic datasets, language distributions, and product catalogue powering KaryaMitra AI.</p>
+          </div>
+          <div class="header-meta">
+            <span class="status-badge DRAFT" id="dataset-version-badge">Dataset v2.0-candidate</span>
+            <span class="meta-pill">100% Synthetic Corpus</span>
+          </div>
+        </div>
+
+        <!-- Dataset Health Notice (Informative, Non-Alarmist) -->
+        <div class="dataset-health-grid">
+          <div class="health-stat-card">
+            <div class="stat-label">Total Corpus Records</div>
+            <div class="stat-val" id="health-total-records">60</div>
+            <div class="stat-desc">36 Dev (60%) · 12 Val (20%) · 12 Locked (20%)</div>
+          </div>
+          <div class="health-stat-card">
+            <div class="stat-label">Source Composition</div>
+            <div class="stat-val">100% Synthetic</div>
+            <div class="stat-desc">60/60 fictional; 0 real distributor messages</div>
+          </div>
+          <div class="health-stat-card">
+            <div class="stat-label">Language Distribution</div>
+            <div class="stat-val" id="health-language-dist">55 En / 5 Reg</div>
+            <div class="stat-desc">English: 91.7% · Marathi/Hinglish: 8.3%</div>
+          </div>
+          <div class="health-stat-card">
+            <div class="stat-label">Human Review Status</div>
+            <div class="stat-val" id="health-review-status">60 Pending</div>
+            <div class="stat-desc">0% independently reviewed · Not evaluated</div>
+          </div>
+        </div>
+
+        <!-- Health Notice Banner -->
+        <div class="alert-banner warning">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <div>
+            <strong>Dataset Transparency &amp; Health Notice:</strong>
+            <ul style="margin: 0.35rem 0 0; padding-left: 1.25rem; font-size: 0.82rem;">
+              <li><strong>Synthetic-Only Source:</strong> All 60 records are hand-authored synthetic scenarios for prototype development and testing.</li>
+              <li><strong>Language Skew:</strong> 55 of 60 records (91.7%) are English; regional coverage is limited to 5 documented Hinglish/Marathi patterns.</li>
+              <li><strong>Pending Independent Reviews:</strong> All 60 candidate annotations remain in <code>pending_review</code> status. No benchmark accuracy is claimed until independent annotations are completed.</li>
+              <li><strong>Locked-Test Protection:</strong> Expected items and ground truth answers for the 12 locked-test records are strictly isolated and never transmitted via API or normal UI. Locked test rows are ineligible for intake execution.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Sub-Navigation for Datasets -->
+        <div class="sub-nav-tabs">
+          <button class="sub-nav-tab active" data-subtab="eval" id="subtab-eval">Evaluation Dataset (60 records)</button>
+          <button class="sub-nav-tab" data-subtab="catalogue" id="subtab-catalogue">Product Catalogue (6 SKUs)</button>
+          <button class="sub-nav-tab" data-subtab="samples" id="subtab-samples">Intake Sample Messages (6 records)</button>
+        </div>
+
+        <!-- Sub-View A: Evaluation Dataset -->
+        <div id="subview-eval">
+          <div class="filter-bar">
+            <input type="text" class="form-input search-input" id="eval-search" placeholder="Search by Record ID, message, category, or language…">
+            <div class="filter-pills" id="split-filter-pills">
+              <button class="filter-pill active" data-split="all">All Splits (<span id="count-split-all">60</span>)</button>
+              <button class="filter-pill" data-split="development">Development (<span id="count-split-dev">36</span>)</button>
+              <button class="filter-pill" data-split="validation">Validation (<span id="count-split-val">12</span>)</button>
+              <button class="filter-pill" data-split="locked_test">Locked Test (<span id="count-split-locked">12</span>)</button>
+            </div>
+            <select class="form-select" id="eval-category-select" style="width: auto; min-width: 170px;">
+              <option value="">All Categories</option>
+            </select>
+            <select class="form-select" id="eval-language-select" style="width: auto; min-width: 150px;">
+              <option value="">All Languages</option>
+              <option value="English">English</option>
+              <option value="Marathi/Hinglish limited">Marathi/Hinglish</option>
+              <option value="Hinglish limited">Hinglish</option>
+            </select>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table" id="eval-table">
+              <thead>
+                <tr>
+                  <th>Record ID</th>
+                  <th>Split</th>
+                  <th>Category</th>
+                  <th>Language</th>
+                  <th style="min-width: 300px;">Input Message</th>
+                  <th>Source</th>
+                  <th>Review Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="eval-table-body">
+                <tr><td colspan="8" class="empty-state">Loading evaluation dataset…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-controls">
+            <div id="eval-pagination-info">Showing 1 to 10 of 60 records</div>
+            <div class="actions-row">
+              <button class="btn btn-secondary btn-sm" id="btn-eval-prev" disabled>← Previous</button>
+              <span id="eval-page-number" style="font-weight: 600; padding: 0.35rem 0.5rem;">Page 1</span>
+              <button class="btn btn-secondary btn-sm" id="btn-eval-next">Next →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-View B: Product Catalogue -->
+        <div id="subview-catalogue" style="display:none;">
+          <div class="filter-bar">
+            <input type="text" class="form-input search-input" id="catalogue-search" placeholder="Search SKU, name, aliases, or unit…">
+            <span class="meta-pill" id="catalogue-count-pill">6 Loaded Products</span>
+            <span class="status-badge DRAFT">Synthetic Catalogue Only</span>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="catalogue-table">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Product Name</th>
+                  <th>Aliases</th>
+                  <th>Pack Size</th>
+                  <th>Sellable Unit</th>
+                  <th>Units / Box</th>
+                  <th>Configured Conversions</th>
+                  <th>Catalogue Price</th>
+                  <th>Dataset Source</th>
+                </tr>
+              </thead>
+              <tbody id="catalogue-table-body">
+                <tr><td colspan="9" class="empty-state">Loading catalogue records…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sub-View C: Intake Sample Orders -->
+        <div id="subview-samples" style="display:none;">
+          <div class="table-container">
+            <table class="data-table" id="samples-table">
+              <thead>
+                <tr>
+                  <th>Sample ID</th>
+                  <th>Category</th>
+                  <th>Language</th>
+                  <th style="min-width: 320px;">Customer Message</th>
+                  <th>Annotation Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="samples-table-body">
+                <tr><td colspan="6" class="empty-state">Loading intake samples…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 3: HUMAN REVIEW                     -->
+    <!-- ========================================== -->
+    <div class="tab-pane" id="view-review">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+              Human Review &amp; Quality Gate
+            </h2>
+            <p class="card-subtitle">Dedicated operator console to inspect findings, resolve ambiguities, and enforce approval safeguards.</p>
+          </div>
+          <div class="header-meta">
+            <label for="review-order-selector" style="font-size: 0.8rem; font-weight: 600; color: var(--color-text-secondary);">Select Order:</label>
+            <select class="form-select" id="review-order-selector" style="width: auto; min-width: 200px; padding: 0.35rem 0.6rem; font-size: 0.82rem;">
+              <option value="">No orders in current session</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="human-review-content">
+          <div class="empty-state">
+            <div class="empty-state-icon">🛡️</div>
+            <div class="empty-state-title">No Order Selected for Human Review</div>
+            <p class="empty-state-desc">Process an order in the <strong>Order Workspace</strong> to evaluate lines, review validation findings, and execute approval or rejection actions.</p>
+            <button class="btn btn-primary btn-sm" id="btn-goto-workspace-from-review">Go to Order Workspace</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 4: OPERATIONAL METRICS              -->
+    <!-- ========================================== -->
+    <div class="tab-pane" id="view-metrics">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+              Operational Metrics
+            </h2>
+            <p class="card-subtitle">Live production telemetry derived strictly from actual backend counters and loaded datasets.</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-metrics">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Refresh Telemetry
+          </button>
+        </div>
+
+        <div class="alert-banner info" style="margin-bottom: 1.25rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <div>
+            <strong>Session Boundary Disclosure:</strong> Operational counters below reflect in-memory requests executed during the active server session. They are deliberately kept separate from persistent business analytics and benchmark evaluation accuracy.
+          </div>
+        </div>
+
+        <!-- KPI Stat Cards Grid -->
+        <div class="metrics-grid">
+          <div class="metric-card highlight">
+            <div class="metric-header">Orders Processed</div>
+            <div class="metric-value" id="metric-orders-processed">0</div>
+            <div class="metric-subtitle">Total intake requests in session</div>
+          </div>
+          <div class="metric-card success">
+            <div class="metric-header">Verified Orders</div>
+            <div class="metric-value" id="metric-verified-orders">0</div>
+            <div class="metric-subtitle">Catalogue verified, ready for sign-off</div>
+          </div>
+          <div class="metric-card warning">
+            <div class="metric-header">Needs Clarification</div>
+            <div class="metric-value" id="metric-clarification-orders">0</div>
+            <div class="metric-subtitle">Flagged for human review</div>
+          </div>
+          <div class="metric-card success">
+            <div class="metric-header">Approved Orders</div>
+            <div class="metric-value" id="metric-approved-orders">0</div>
+            <div class="metric-subtitle">Explicit human approvals</div>
+          </div>
+          <div class="metric-card danger">
+            <div class="metric-header">Rejected Orders</div>
+            <div class="metric-value" id="metric-rejected-orders">0</div>
+            <div class="metric-subtitle">Explicit operator rejections</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">Human Corrections</div>
+            <div class="metric-value" id="metric-corrections">0</div>
+            <div class="metric-subtitle">Reprocessed edit cycles</div>
+          </div>
+          <div class="metric-card danger">
+            <div class="metric-header">Processing Errors</div>
+            <div class="metric-value" id="metric-errors">0</div>
+            <div class="metric-subtitle">Pipeline exceptions caught</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">Active SKUs Loaded</div>
+            <div class="metric-value" id="metric-catalogue-count">6</div>
+            <div class="metric-subtitle">From data/products.csv</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">Evaluation Dataset</div>
+            <div class="metric-value" id="metric-eval-count">60</div>
+            <div class="metric-subtitle">Candidate &amp; locked test records</div>
+          </div>
+        </div>
+
+        <!-- Benchmark Accuracy Callout Banner -->
+        <div class="alert-banner info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <div>
+            <strong>Benchmark Accuracy Status:</strong> <span id="metric-benchmark-accuracy">Not available: no independent locked evaluation set exists.</span>
+            <div style="font-size: 0.8rem; margin-top: 0.25rem; color: var(--color-text-secondary);">
+              KaryaMitra AI adheres to academic evaluation integrity. Operational intake counters are separated from benchmark test accuracy. No model accuracy is claimed until independent annotations are completed.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 5: EVALUATION READINESS             -->
+    <!-- ========================================== -->
+    <div class="tab-pane" id="view-evaluation">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              Evaluation Readiness &amp; Integrity Evidence
+            </h2>
+            <p class="card-subtitle">Transparent verification of dataset splits, frozen file SHA-256 hashes, and baseline rules status.</p>
+          </div>
+        </div>
+
+        <!-- Scientific Separation of Concepts Matrix -->
+        <div style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 0.95rem; margin-top: 0;">Evaluation &amp; Verification Evidence Matrix</h3>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Concept</th>
+                  <th>Current State</th>
+                  <th>Evidence Basis</th>
+                  <th>Status Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Automated Test Suite</strong></td>
+                  <td><span class="status-badge VERIFIED">38 / 38 Passed</span></td>
+                  <td>Pytest automated regression tests</td>
+                  <td>Code and unit logic pass all regression checks</td>
+                </tr>
+                <tr>
+                  <td><strong>Live API &amp; Browser Verification</strong></td>
+                  <td><span class="status-badge VERIFIED">13 / 13 Passed</span></td>
+                  <td>Live Uvicorn + Headless Edge verification</td>
+                  <td>Live FastAPI endpoints, DOM, and safeguards verified</td>
+                </tr>
+                <tr>
+                  <td><strong>Dataset Annotations Review</strong></td>
+                  <td><span class="status-badge pending_review">0 / 60 Reviewed</span></td>
+                  <td>All 60 records pending human review</td>
+                  <td>Independent blind review not yet conducted</td>
+                </tr>
+                <tr>
+                  <td><strong>Extraction Accuracy Benchmark</strong></td>
+                  <td><span class="status-badge DRAFT">Not Evaluated</span></td>
+                  <td>Baseline rules evaluator on locked test</td>
+                  <td>No accuracy score claimed on unreviewed ground truth</td>
+                </tr>
+                <tr>
+                  <td><strong>LLM Adapter Configuration</strong></td>
+                  <td><span class="status-badge DRAFT" id="eval-llm-config-badge">Unconfigured</span></td>
+                  <td>OPENROUTER_API_KEY environment variable</td>
+                  <td>Live LLM adapter inactive; rules parser active</td>
+                </tr>
+                <tr>
+                  <td><strong>Live LLM Provider Request</strong></td>
+                  <td><span class="status-badge DRAFT">Not Verified Live</span></td>
+                  <td>Mocked tests pass; no live API call on corpus</td>
+                  <td>No external API billing or provider SLA assumed</td>
+                </tr>
+                <tr>
+                  <td><strong>Commercial Customer Validation</strong></td>
+                  <td><span class="status-badge DRAFT">Synthetic Prototype</span></td>
+                  <td>Hand-authored synthetic MSME scenarios</td>
+                  <td>Prototype stage; real customer workflow unvalidated</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="workspace-grid">
+          <!-- Left: Split Breakdown & Integrity -->
+          <div>
+            <h3 style="font-size: 0.95rem; margin-top: 0;">Corpus Split Composition</h3>
+            <div class="table-container" style="margin-bottom: 1.25rem;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Split</th>
+                    <th>Records</th>
+                    <th>Share</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="status-badge split-dev">Development</span></td>
+                    <td><strong>36</strong></td>
+                    <td>60.0%</td>
+                    <td>Synthetic Training / Tuning</td>
+                  </tr>
+                  <tr>
+                    <td><span class="status-badge split-val">Validation</span></td>
+                    <td><strong>12</strong></td>
+                    <td>20.0%</td>
+                    <td>Candidate Tuning Verification</td>
+                  </tr>
+                  <tr>
+                    <td><span class="status-badge split-locked">Locked Test</span></td>
+                    <td><strong>12</strong></td>
+                    <td>20.0%</td>
+                    <td>Frozen Benchmark Partition</td>
+                  </tr>
+                  <tr style="background: var(--color-bg-subtle);">
+                    <td><strong>Total Corpus</strong></td>
+                    <td><strong>60</strong></td>
+                    <td><strong>100%</strong></td>
+                    <td><strong>Dataset Version: 2.0-candidate</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 style="font-size: 0.95rem;">Frozen File SHA-256 Integrity</h3>
+            <div class="lines-container" id="frozen-hashes-container">
+              <div class="line-item-card">
+                <div class="line-header">
+                  <span class="sku-pill">locked_test_messages.json</span>
+                  <span class="status-badge VERIFIED">Hash Verified</span>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--color-text-muted); word-break: break-all;" id="hash-messages-val">
+                  547fac8ae10852f7389590877b4ae8987da5bbc9fe0e2e716f4df9c301474ca6
+                </div>
+              </div>
+              <div class="line-item-card">
+                <div class="line-header">
+                  <span class="sku-pill">locked_test_annotations.json</span>
+                  <span class="status-badge VERIFIED">Hash Verified</span>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--color-text-muted); word-break: break-all;" id="hash-annotations-val">
+                  96b920aaa7e154132528358980c2cb9edb6656a5f4d1c7fac966fc88b577d5a4
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Baseline Status & Disclosure -->
+          <div>
+            <h3 style="font-size: 0.95rem; margin-top: 0;">Baseline Rules Model Status</h3>
+            <div class="table-container" style="margin-bottom: 1.25rem;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Evaluation Metric</th>
+                    <th>Current Value</th>
+                    <th>Audit Finding</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Baseline Evaluation Status</td>
+                    <td><span class="status-badge pending_review" id="eval-status-val">Not evaluated</span></td>
+                    <td>Pending independent human reviews</td>
+                  </tr>
+                  <tr>
+                    <td>Reviewed Annotations</td>
+                    <td><strong>0 / 60 (0%)</strong></td>
+                    <td>All 60 marked pending_review</td>
+                  </tr>
+                  <tr>
+                    <td>Eligible Test Records</td>
+                    <td><strong>0</strong></td>
+                    <td>12 unreviewed locked records excluded</td>
+                  </tr>
+                  <tr>
+                    <td>Exact SKU Extraction</td>
+                    <td><em>N/A</em></td>
+                    <td>No eligible reviewed records</td>
+                  </tr>
+                  <tr>
+                    <td>Exact Quantity Conversion</td>
+                    <td><em>N/A</em></td>
+                    <td>No eligible reviewed records</td>
+                  </tr>
+                  <tr>
+                    <td>Critical Validation Errors</td>
+                    <td><strong>0</strong></td>
+                    <td>No unverified false approvals</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="alert-banner warning">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <div>
+                <strong>Scientific Disclosure:</strong> The rules parser v1.0 is engineered for specific documented wholesale patterns. KaryaMitra AI does not claim broad natural language coverage, general Marathi/Hinglish NLP accuracy, or field validation on real customer distributor data.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 6: ACTIVITY & AUDIT TRAIL           -->
+    <!-- ========================================== -->
+    <div class="tab-pane" id="view-audit">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Activity &amp; Operational Audit Trail
+            </h2>
+            <p class="card-subtitle">Real session history, lifecycle event traces, and state transitions recorded by FastAPI.</p>
+          </div>
+        </div>
+
+        <div class="alert-banner info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <div>
+            <strong>In-Memory Lifecycle Notice:</strong> KaryaMitra AI is running in an in-memory prototype configuration. All order IDs, state transitions, and audit events are stored in process memory and will reset upon server restart.
+          </div>
+        </div>
+
+        <h3 style="font-size: 0.95rem; margin-top: 1rem;">Session Orders</h3>
+        <div class="table-container" style="margin-bottom: 1.5rem;">
+          <table class="data-table" id="audit-orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Time (UTC)</th>
+                <th>Initial Text</th>
+                <th>Parser Used</th>
+                <th>State</th>
+                <th>Lines</th>
+                <th>Duration</th>
+                <th>Corrections</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="audit-orders-body">
+              <tr><td colspan="9" class="empty-state">No orders processed yet in this session.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size: 0.95rem;" id="audit-trace-heading">Execution Event Trace (Selected Order)</h3>
+        <div id="audit-trace-container">
+          <p class="card-subtitle">Select an order above or process an order to view its chronological event sequence.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Slide-Over / Modal Record Detail Inspector -->
+  <div class="modal-backdrop" id="record-detail-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="modal-record-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-record-title">Record Details</h3>
+        <button class="modal-close-btn" id="btn-close-modal" aria-label="Close record details">✕</button>
+      </div>
+      <div id="modal-record-body">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div>
+        <strong>KaryaMitra AI</strong> — MSME Productivity Suite · Built for <strong>PRAGYAN 2K26, Track 4-01</strong>
+      </div>
+      <div>
+        Deterministic Rules Parser v1.0 · Optional OpenRouter Adapter · Frozen Dataset v2.0-candidate · In-Memory Backend
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

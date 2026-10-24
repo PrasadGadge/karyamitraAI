@@ -1,0 +1,9 @@
+{
+  "dataset_version": "2.0-candidate",
+  "split_procedure": "A fixed, hand-authored synthetic corpus was assigned before evaluation: 36 development (60%), 12 validation (20%), and 12 locked-test (20%) records. Near-duplicate wording is kept within the same split where practical. This manifest freezes only the locked-test input and annotation files; any change requires a new version and new hashes.",
+  "source_notice": "60/60 records are fictional synthetic data. No real distributor messages or prices are represented.",
+  "frozen_files": {
+    "locked_test_messages.json": "547fac8ae10852f7389590877b4ae8987da5bbc9fe0e2e716f4df9c301474ca6",
+    "locked_test_annotations.json": "96b920aaa7e154132528358980c2cb9edb6656a5f4d1c7fac966fc88b577d5a4"
+  }
+}
