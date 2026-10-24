@@ -1,6 +1,6 @@
 sku,name,aliases,pack_size,sellable_unit,units_per_box,supported_conversions,price,dataset_source
 SYN-OIL-500,Synthetic 500ml Cooking Oil,"500ml oil|cooking oil|oil",500ml,bottle,12,"bottle:1|box:12",82.50,synthetic development catalogue
-SYN-SOAP-100,Synthetic Fresh Soap,"soap|fresh soap",100g,bar,,"bar:1|dozen:12",18.00,synthetic development catalogue
+SYN-SOAP-100,Synthetic Fresh Soap,"soap|fresh soap|soap bar|soap bars",100g,bar,,"bar:1|dozen:12",18.00,synthetic development catalogue
 SYN-SHAMPOO-S,Synthetic Small Shampoo,"small shampoo|shampoo",100ml,bottle,,"bottle:1",45.00,synthetic development catalogue
 SYN-CLASSIC-A,Synthetic Classic Soap,"classic soap",100g,bar,24,"bar:1|box:24",20.00,synthetic development catalogue
 SYN-CLASSIC-B,Synthetic Classic Soap Premium,"classic soap",125g,bar,24,"bar:1|box:24",25.00,synthetic development catalogue

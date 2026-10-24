@@ -64,3 +64,12 @@ def test_evaluation_records_endpoint_does_not_leak_locked_ground_truth():
     # Ensure locked ground truth is never exposed
     assert "expected_items" not in res.text.lower()
     assert "moon juice" not in res.text.lower()
+
+
+def test_locked_test_records_cannot_be_processed_in_intake():
+    res = client.post(
+        "/api/orders/process",
+        json={"message": "Send 3 box oil.", "source_record_id": "EVAL-TEST-001"}
+    )
+    assert res.status_code == 400
+    assert "locked-test" in res.json()["detail"].lower()

@@ -112,6 +112,7 @@
       tab.classList.toggle('active', tab.getAttribute('data-subtab') === subTabId);
     });
     $('subview-eval').style.display = subTabId === 'eval' ? 'block' : 'none';
+    $('subview-health').style.display = subTabId === 'health' ? 'block' : 'none';
     $('subview-catalogue').style.display = subTabId === 'catalogue' ? 'block' : 'none';
     $('subview-samples').style.display = subTabId === 'samples' ? 'block' : 'none';
   }
@@ -201,56 +202,95 @@
       </div>
     ` : '';
 
-    const linesHtml = order.lines.map((line, idx) => {
+    // Update 8-step workflow progression
+    const stepBar = $('workflow-steps-bar');
+    if (stepBar) {
+      ['wf-step-1', 'wf-step-2', 'wf-step-3', 'wf-step-4', 'wf-step-5', 'wf-step-6', 'wf-step-7', 'wf-step-8'].forEach(id => {
+        const el = $(id);
+        if (el) el.classList.remove('active', 'completed');
+      });
+      // Steps 1 to 5 completed by successful backend processing
+      ['wf-step-1', 'wf-step-2', 'wf-step-3', 'wf-step-4', 'wf-step-5'].forEach(id => {
+        const el = $(id);
+        if (el) el.classList.add('completed');
+      });
+      if (order.state === 'NEEDS_CLARIFICATION' || order.state === 'DRAFT') {
+        const s6 = $('wf-step-6'); if (s6) s6.classList.add('active');
+      } else if (order.state === 'VERIFIED') {
+        const s6 = $('wf-step-6'); if (s6) s6.classList.add('completed');
+        const s7 = $('wf-step-7'); if (s7) s7.classList.add('active');
+      } else if (order.state === 'APPROVED') {
+        const s6 = $('wf-step-6'); if (s6) s6.classList.add('completed');
+        const s7 = $('wf-step-7'); if (s7) s7.classList.add('completed');
+        const s8 = $('wf-step-8'); if (s8) s8.classList.add('active');
+      } else if (order.state === 'REJECTED') {
+        const s6 = $('wf-step-6'); if (s6) s6.classList.add('completed');
+        const s7 = $('wf-step-7'); if (s7) s7.classList.add('completed');
+      }
+    }
+
+    // Build Structured Order Lines Table
+    const linesTableRows = order.lines.map((line, idx) => {
       const isOk = line.verified;
       const findings = line.findings || [];
-      const hasFindings = findings.length > 0;
-      const cardClass = isOk ? 'line-item-card' : (findings.some(f => f.includes('No catalogue product') || f.includes('Multiple catalogue')) ? 'line-item-card unresolved' : 'line-item-card error');
+      const rowClass = isOk ? 'line-row-verified' : 'line-row-unresolved';
+
+      // Original quantity text
+      const origQty = (line.quantity !== null && line.quantity !== undefined)
+        ? `<strong>${line.quantity}</strong> ${escapeHtml(line.requested_unit || 'unit')}`
+        : '<span style="color:#b91c1c; font-weight:600;">Missing Qty</span>';
+
+      // Normalized quantity with explicit calculation
+      let normQty = '<span style="color:var(--color-text-muted);">—</span>';
+      if (line.converted_quantity !== null && line.converted_quantity !== undefined) {
+        normQty = `<strong>${line.converted_quantity}</strong> ${escapeHtml(line.sellable_unit || '')}`;
+        if (line.requested_unit && line.requested_unit.toLowerCase() !== (line.sellable_unit || '').toLowerCase()) {
+          normQty += `<div style="font-size:0.72rem; color:var(--color-text-muted);">(${escapeHtml(line.quantity)} ${escapeHtml(line.requested_unit)} converted)</div>`;
+        }
+      }
+
+      // SKU and product description
+      let skuDesc = '';
+      if (line.sku) {
+        skuDesc = `<span class="sku-pill">${escapeHtml(line.sku)}</span><div style="font-weight:600; font-size:0.84rem; margin-top:2px; color:var(--color-text-primary);">${escapeHtml(line.product_name)}</div>`;
+      } else if (line.match_evidence && line.match_evidence.length > 1) {
+        skuDesc = `
+          <span class="status-badge NEEDS_CLARIFICATION">Ambiguous (${line.match_evidence.length} matches)</span>
+          <div style="font-size:0.75rem; margin-top:3px;">${line.match_evidence.map(m => `<span class="sku-pill" style="margin:1px 2px;">${escapeHtml(m.sku)}</span>`).join('')}</div>
+        `;
+      } else {
+        skuDesc = '<span style="color:#b91c1c; font-weight:600; font-size:0.82rem;">No Catalogue Match</span>';
+      }
+
+      // Findings & Diagnostics
+      let findingsHtml = '';
+      if (findings.length) {
+        findingsHtml = `<div style="color:var(--color-warning-text); font-size:0.76rem; line-height:1.3;">⚠️ ${findings.map(escapeHtml).join(' · ')}</div>`;
+      } else {
+        findingsHtml = '<div style="color:var(--color-success-text); font-size:0.76rem; font-weight:600;">✓ Catalogue rules validated</div>';
+      }
 
       return `
-        <div class="${cardClass}">
-          <div class="line-header">
-            <div class="line-requested-text">
-              #${idx + 1} "${escapeHtml(line.product_text || line.source_text)}"
-            </div>
+        <tr class="${rowClass}">
+          <td style="font-weight:700; color:var(--color-text-muted);">${idx + 1}</td>
+          <td><code style="font-size:0.82rem;">${escapeHtml(line.product_text || line.source_text)}</code></td>
+          <td>${skuDesc}</td>
+          <td>${origQty}</td>
+          <td>${normQty}</td>
+          <td>${formatCurrency(line.unit_price)}</td>
+          <td><strong style="color:var(--color-primary-dark); font-size:0.92rem;">${formatCurrency(line.line_total)}</strong></td>
+          <td>
             <span class="status-badge ${isOk ? 'VERIFIED' : 'NEEDS_CLARIFICATION'}">
-              ${isOk ? '✓ Catalogue Verified' : '⚠️ Unresolved'}
+              ${isOk ? '✓ Verified' : '⚠️ Unresolved'}
             </span>
-          </div>
-
-          <div class="line-matched-info">
-            <strong>Matched SKU:</strong>
-            ${line.sku ? `<span class="sku-pill">${escapeHtml(line.sku)}</span> · <strong>${escapeHtml(line.product_name)}</strong>` : '<span style="color:#b91c1c; font-weight:600;">Unresolved — No Single Catalogue Match</span>'}
-          </div>
-
-          ${line.match_evidence && line.match_evidence.length > 1 ? `
-            <div style="font-size:0.78rem; background:#fffbeb; padding:0.4rem 0.6rem; border-radius:4px; margin:0.35rem 0; border:1px solid #fde68a;">
-              <strong>Ambiguous Candidate Matches (${line.match_evidence.length}):</strong>
-              ${line.match_evidence.map(m => `<span class="sku-pill" style="margin-right:0.3rem;">${escapeHtml(m.sku)}: ${escapeHtml(m.name)}</span>`).join(' ')}
-            </div>
-          ` : ''}
-
-          <div class="line-math-row">
-            <div class="line-math-col">Requested: <strong>${line.quantity ?? 'None'} ${escapeHtml(line.requested_unit || 'unspecified')}</strong></div>
-            <div class="line-math-col">Normalized Qty: <strong>${line.converted_quantity !== null && line.converted_quantity !== undefined ? line.converted_quantity : '—'} ${escapeHtml(line.sellable_unit || '')}</strong></div>
-            <div class="line-math-col">Catalogue Price: <strong>${formatCurrency(line.unit_price)}</strong></div>
-            <div class="line-math-col">Line Total: <strong>${formatCurrency(line.line_total)}</strong></div>
-          </div>
-
-          ${hasFindings ? `
-            <div class="line-findings ${isOk ? 'success' : 'warning'}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-              <span>${findings.map(escapeHtml).join(' | ')}</span>
-            </div>
-          ` : `
-            <div class="line-findings success">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Catalogue verification checks passed.</span>
-            </div>
-          `}
-        </div>
+          </td>
+          <td>${findingsHtml}</td>
+        </tr>
       `;
     }).join('');
+
+    const subtotal = order.lines.reduce((sum, l) => sum + (Number(l.line_total) || 0), 0);
+    const verifiedLinesCount = order.lines.filter(l => l.verified).length;
 
     const unparsedHtml = order.unrecognised_text && order.unrecognised_text.length ? `
       <div class="alert-banner warning" style="margin-top:0.75rem;">
@@ -305,8 +345,34 @@
         <span style="font-size: 0.8rem; color: var(--color-text-muted);">Source Record: ${escapeHtml(order.source_record_id || 'Direct message')}</span>
       </div>
 
-      <div class="lines-container">
-        ${order.lines.length ? linesHtml : '<div class="empty-state"><p>No items could be extracted.</p></div>'}
+      <!-- High-Readability Structured Order Result Table -->
+      <div class="table-container order-table-container" style="margin-bottom:0.85rem; border:1px solid var(--color-border); border-radius:var(--radius-md); overflow-x:auto;">
+        <table class="data-table order-result-table" style="margin:0;">
+          <thead>
+            <tr>
+              <th style="width:32px;">#</th>
+              <th style="min-width:130px;">Input Text</th>
+              <th style="min-width:170px;">Matched SKU &amp; Product</th>
+              <th>Original Qty</th>
+              <th>Normalized Qty</th>
+              <th>Unit Price</th>
+              <th>Line Total</th>
+              <th>Validation State</th>
+              <th style="min-width:180px;">Safeguard Diagnostics</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.lines.length ? linesTableRows : '<tr><td colspan="9" class="empty-state">No items could be extracted.</td></tr>'}
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--color-bg-subtle); font-weight:600; border-top:2px solid var(--color-border);">
+              <td colspan="3" style="text-align:right;">Order Summary Totals:</td>
+              <td colspan="2">Verified: <strong>${verifiedLinesCount} / ${order.lines.length}</strong> lines</td>
+              <td>Total:</td>
+              <td colspan="3"><strong style="font-size:1.05rem; color:var(--color-primary-dark);">${formatCurrency(subtotal)}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
 
       ${unparsedHtml}
@@ -648,6 +714,7 @@
       catSelect.innerHTML = '<option value="">All Categories</option>' + categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
 
       renderEvalTable();
+      renderCategoryCoverageTable();
 
       // 2. Fetch Catalogue Records
       const catData = await api('/api/catalogue');
@@ -660,6 +727,10 @@
       // 3. Fetch Intake Samples
       const sampleData = await api('/api/dataset');
       state.sampleOrders = sampleData.records || [];
+      const barSamples = $('bar-samples-count');
+      if (barSamples) barSamples.textContent = state.sampleOrders.length;
+      const barReadiness = $('bar-dataset-readiness');
+      if (barReadiness) barReadiness.textContent = `${state.evalRecords.length} Synthetic · Not Evaluated`;
       renderSamplesTable();
       populateIntakeSelect();
     } catch (err) {
@@ -773,6 +844,68 @@
         if (record) openRecordModal(record);
       });
     });
+  }
+
+  function renderCategoryCoverageTable() {
+    const tbody = $('category-coverage-body');
+    if (!tbody || !state.evalRecords.length) return;
+
+    const catMap = {};
+    state.evalRecords.forEach(r => {
+      if (!catMap[r.category]) {
+        catMap[r.category] = { total: 0, dev: 0, val: 0, locked: 0 };
+      }
+      catMap[r.category].total++;
+      if (r.split === 'development') catMap[r.category].dev++;
+      else if (r.split === 'validation') catMap[r.category].val++;
+      else if (r.split === 'locked_test') catMap[r.category].locked++;
+    });
+
+    const categoryDescriptions = {
+      'clear order': 'Explicit item and valid pack quantity in English',
+      'clear English order': 'Unambiguous English multi-item wholesale request',
+      'supported informal order': 'Informal Hinglish/Marathi syntax with ani/pathav',
+      'ambiguous product': 'Multiple candidate SKUs (e.g. Classic Soap 100g vs 125g)',
+      'unknown product': 'Item absent from products.csv; halted for clarification',
+      'missing quantity': 'Product named without valid numerical quantity',
+      'missing quantity and unit': 'Product named without quantity or unit specification',
+      'unconfigured box conversion': 'Item requested in boxes where units_per_box is undefined',
+      'configured box conversion': 'Item requested in boxes with explicit 1:12 conversion',
+      'dozen conversion': 'Standard dozen factor (1 dozen = 12 sellable units)',
+      'plural unit': 'Plural grammatical variants (bottles, bars, boxes)',
+      'unsupported unit': 'Unconfigured unit measurement (e.g. pieces, cartons)',
+      'missing catalogue price': 'Catalogue item with null or invalid price',
+      'personal identifier present': 'PII present (phone/email/name) requiring masking',
+      'multiple products': 'Multi-line composite customer orders',
+      'case variation': 'Upper/lower casing variations in product naming',
+      'quantity variation': 'Spelled-out vs numerical quantity tokens',
+      'registered alias': 'Product matched via secondary registered alias',
+      'invalid quantity': 'Zero or negative quantity rejected by safeguards',
+      'malformed order': 'Punctuation or whitespace anomalies',
+      'unsupported wording': 'Unrecognised freeform conversational filler',
+      'mixed conversion': 'Order mixing direct sellable units and pack conversions',
+      'mixed configured and unsupported': 'Order with one supported and one unsupported unit',
+      'mixed known and unknown': 'Order containing both known and unregistered products',
+      'mixed price failure': 'Order where one line has valid price and another is unpriced',
+      'mixed valid and ambiguous': 'Order containing a clear line and an ambiguous line',
+      'pack size reference': 'Customer mentions pack volume instead of product name',
+    };
+
+    const sortedCats = Object.keys(catMap).sort();
+    tbody.innerHTML = sortedCats.map(cat => {
+      const data = catMap[cat];
+      const desc = categoryDescriptions[cat] || 'Synthetic evaluation scenario';
+      return `
+        <tr>
+          <td><strong>${escapeHtml(cat)}</strong></td>
+          <td><span class="sku-pill">${data.total}</span></td>
+          <td>${data.dev}</td>
+          <td>${data.val}</td>
+          <td>${data.locked ? `<span style="color:#b91c1c; font-weight:600;">${data.locked} (🔒)</span>` : '0'}</td>
+          <td style="font-size:0.82rem; color:var(--color-text-secondary);">${escapeHtml(desc)}</td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function openRecordModal(record) {
@@ -1294,6 +1427,24 @@
     await loadDatasetExplorer();
     await refreshMetrics();
     await refreshEvaluation();
+
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['workspace', 'dataset', 'review', 'metrics', 'evaluation', 'audit'].includes(tabParam)) {
+      switchTab(tabParam);
+    }
+    const subtabParam = params.get('subtab');
+    if (subtabParam && ['eval', 'health', 'catalogue', 'samples'].includes(subtabParam)) {
+      switchDatasetSubTab(subtabParam);
+    }
+    const sampleParam = params.get('sample');
+    if (sampleParam) {
+      loadSampleById(sampleParam);
+    }
+    if (params.get('auto_process') === '1') {
+      const btn = $('btn-process');
+      if (btn) btn.click();
+    }
   }
 
   window.addEventListener('DOMContentLoaded', init);

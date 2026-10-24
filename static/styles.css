@@ -273,6 +273,56 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   color: #ffffff;
 }
 
+.workflow-step.completed {
+  color: var(--color-success-text);
+  font-weight: 600;
+}
+
+.workflow-step.completed .workflow-step-num {
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
+  color: var(--color-success-text);
+}
+
+/* Order Result Table Enhancements */
+.order-table-container {
+  box-shadow: var(--shadow-sm);
+  background: #ffffff;
+}
+
+.order-result-table {
+  font-size: 0.84rem;
+}
+
+.order-result-table th {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  padding: 0.65rem 0.75rem;
+  white-space: nowrap;
+}
+
+.order-result-table td {
+  padding: 0.65rem 0.75rem;
+  vertical-align: middle;
+}
+
+.order-result-table .line-row-verified {
+  background: #ffffff;
+}
+
+.order-result-table .line-row-verified:hover {
+  background: #f8faf9;
+}
+
+.order-result-table .line-row-unresolved {
+  background: #fffdf5;
+}
+
+.order-result-table .line-row-unresolved:hover {
+  background: #fffbeb;
+}
+
 .workflow-arrow {
   color: var(--color-text-muted);
   font-size: 0.8rem;

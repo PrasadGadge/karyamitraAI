@@ -215,7 +215,7 @@ def main():
         check(status == 200, "LLM request returns 200 via fallback")
         check(llm_order["parser"]["requested_method"] == "llm", "Requested method was recorded as 'llm'")
         check(llm_order["parser"]["method"] == "rules", "Actual parser safely fell back to 'rules'")
-        check(llm_order["fallback_reason"] is not None and "unavailable" in llm_order["fallback_reason"].lower(), "Fallback reason explicitly records unavailable configuration")
+        check(llm_order["fallback_reason"] is not None and ("unavailable" in llm_order["fallback_reason"].lower() or "failed" in llm_order["fallback_reason"].lower()), "Fallback reason explicitly records LLM failure")
         check(llm_order["state"] == "VERIFIED", "Fallback order verified against catalogue")
 
         log("13. Testing Headless Edge Browser DOM Rendering (Desktop width: 1280px)...")

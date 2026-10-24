@@ -72,33 +72,45 @@
     <!-- ========================================== -->
     <div class="tab-pane active" id="view-workspace">
 
-      <!-- Visual Processing Sequence Indicator -->
-      <div class="workflow-steps" aria-label="Order intake sequence">
-        <div class="workflow-step active">
-          <span class="workflow-step-num">1</span> Choose Sample / Enter Message
+      <!-- Visual Processing Sequence Indicator (8-Step Obvious Workflow) -->
+      <div class="workflow-steps" id="workflow-steps-bar" aria-label="Order intake sequence">
+        <div class="workflow-step active" id="wf-step-1">
+          <span class="workflow-step-num">1</span> Sample / Message
         </div>
         <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-          <span class="workflow-step-num">2</span> Select Parser (Rules / LLM)
+        <div class="workflow-step" id="wf-step-2">
+          <span class="workflow-step-num">2</span> Parser Select
         </div>
         <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-          <span class="workflow-step-num">3</span> Process via FastAPI
+        <div class="workflow-step" id="wf-step-3">
+          <span class="workflow-step-num">3</span> FastAPI Process
         </div>
         <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-          <span class="workflow-step-num">4</span> Catalogue Verification &amp; Price
+        <div class="workflow-step" id="wf-step-4">
+          <span class="workflow-step-num">4</span> Catalogue Match
         </div>
         <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-          <span class="workflow-step-num">5</span> Human Approval Safeguard
+        <div class="workflow-step" id="wf-step-5">
+          <span class="workflow-step-num">5</span> Findings Audit
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step" id="wf-step-6">
+          <span class="workflow-step-num">6</span> Clarify / Correct
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step" id="wf-step-7">
+          <span class="workflow-step-num">7</span> Approval Gate
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step" id="wf-step-8">
+          <span class="workflow-step-num">8</span> Approved Export
         </div>
       </div>
 
       <!-- Session Counters Quick Bar -->
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding:0.5rem 0.85rem; background:#ffffff; border:1px solid var(--color-border); border-radius:var(--radius-md); font-size:0.8rem;">
-        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-          <span>Session Orders: <strong id="bar-orders-processed">0</strong></span>
+      <div class="session-quick-bar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding:0.6rem 0.9rem; background:#ffffff; border:1px solid var(--color-border); border-radius:var(--radius-md); font-size:0.8rem;">
+        <div style="display:flex; align-items:center; gap:0.65rem; flex-wrap:wrap;">
+          <span>Orders Processed: <strong id="bar-orders-processed">0</strong></span>
           <span>·</span>
           <span>Verified: <strong id="bar-verified-orders" style="color:var(--color-success-text);">0</strong></span>
           <span>·</span>
@@ -107,9 +119,13 @@
           <span>Approved: <strong id="bar-approved-orders" style="color:#065f46;">0</strong></span>
           <span>·</span>
           <span>Catalogue SKUs: <strong id="bar-catalogue-count">6</strong></span>
+          <span>·</span>
+          <span>Intake Samples: <strong id="bar-samples-count">6</strong></span>
+          <span>·</span>
+          <span>Corpus Readiness: <strong id="bar-dataset-readiness">60 Synthetic · Not Evaluated</strong></span>
         </div>
-        <span class="meta-pill" style="font-size:0.72rem; color:var(--color-text-muted);">
-          In-Memory Prototype · No Persistent Business Analytics
+        <span class="meta-pill" style="font-size:0.72rem; color:var(--color-text-muted);" title="In-memory order and audit records reset on application restart">
+          In-Memory Session (Resets on Restart) · No Persistent Analytics
         </span>
       </div>
 
@@ -279,6 +295,7 @@
         <!-- Sub-Navigation for Datasets -->
         <div class="sub-nav-tabs">
           <button class="sub-nav-tab active" data-subtab="eval" id="subtab-eval">Evaluation Dataset (60 records)</button>
+          <button class="sub-nav-tab" data-subtab="health" id="subtab-health">Health &amp; Coverage Analysis</button>
           <button class="sub-nav-tab" data-subtab="catalogue" id="subtab-catalogue">Product Catalogue (6 SKUs)</button>
           <button class="sub-nav-tab" data-subtab="samples" id="subtab-samples">Intake Sample Messages (6 records)</button>
         </div>
@@ -381,6 +398,137 @@
                 <tr><td colspan="6" class="empty-state">Loading intake samples…</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Sub-View D: Health & Coverage Deep Dive -->
+        <div id="subview-health" style="display:none;">
+          <div class="workspace-grid" style="margin-bottom: 1.5rem;">
+            <!-- Left: Missing/Incomplete Attributes Disclosure -->
+            <div class="card" style="margin: 0; box-shadow: none; border: 1px solid var(--color-border);">
+              <div class="card-header" style="border-bottom: 1px solid var(--color-border); padding: 0.75rem 1rem;">
+                <h3 style="font-size: 0.95rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  Missing &amp; Incomplete Dataset Attributes
+                </h3>
+              </div>
+              <div style="padding: 1rem; font-size: 0.85rem;">
+                <p style="margin-top: 0; color: var(--color-text-secondary);">
+                  In accordance with scientific and PRAGYAN Stage 3 academic standards, the following known gaps and limitations are explicitly disclosed:
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <div style="border-left: 3px solid #f59e0b; padding-left: 0.75rem;">
+                    <strong>1. 100% Synthetic Source Corpus</strong>
+                    <div style="color: var(--color-text-secondary); font-size: 0.8rem;">
+                      All 60 records are synthetic test prompts. Zero production customer messages or distributor chats were collected or processed.
+                    </div>
+                  </div>
+                  <div style="border-left: 3px solid #f59e0b; padding-left: 0.75rem;">
+                    <strong>2. Severe Regional Vernacular Skew</strong>
+                    <div style="color: var(--color-text-secondary); font-size: 0.8rem;">
+                      55 of 60 records (91.7%) are English. Only 5 records test limited Marathi/Hinglish separator tokens (<code>ani</code>, <code>pathav</code>). No general Indic NLP is supported.
+                    </div>
+                  </div>
+                  <div style="border-left: 3px solid #f59e0b; padding-left: 0.75rem;">
+                    <strong>3. 0% Independent Human Reviews Completed</strong>
+                    <div style="color: var(--color-text-secondary); font-size: 0.8rem;">
+                      All 60 annotations are candidate labels created during prototype generation. An independent teammate must execute the blind review protocol before gold-standard status is established.
+                    </div>
+                  </div>
+                  <div style="border-left: 3px solid #f59e0b; padding-left: 0.75rem;">
+                    <strong>4. Extraction Benchmark Unevaluated</strong>
+                    <div style="color: var(--color-text-secondary); font-size: 0.8rem;">
+                      Because zero reviewed ground-truth records exist, extraction accuracy is honestly reported as "Not Evaluated" (0 eligible records evaluated).
+                    </div>
+                  </div>
+                  <div style="border-left: 3px solid #f59e0b; padding-left: 0.75rem;">
+                    <strong>5. No Commercial Customer Validation</strong>
+                    <div style="color: var(--color-text-secondary); font-size: 0.8rem;">
+                      No real distributor ROI, WhatsApp business webhook, voice intake, or ERP database synchronization is claimed for this prototype.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Split & Language Distribution Summary -->
+            <div class="card" style="margin: 0; box-shadow: none; border: 1px solid var(--color-border);">
+              <div class="card-header" style="border-bottom: 1px solid var(--color-border); padding: 0.75rem 1rem;">
+                <h3 style="font-size: 0.95rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                  Language &amp; Partition Distribution
+                </h3>
+              </div>
+              <div style="padding: 1rem; font-size: 0.85rem;">
+                <table class="data-table" style="margin-bottom: 1rem;">
+                  <thead>
+                    <tr><th>Language</th><th>Records</th><th>Share</th><th>Coverage Limitation</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>English</strong></td>
+                      <td>55</td>
+                      <td>91.7%</td>
+                      <td>Primary development partition</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Marathi/Hinglish limited</strong></td>
+                      <td>3</td>
+                      <td>5.0%</td>
+                      <td>Tests <code>ani</code> and <code>pathav</code> keywords</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Hinglish limited</strong></td>
+                      <td>2</td>
+                      <td>3.3%</td>
+                      <td>Tests informal Hindi/English mixing</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size: 0.85rem; margin: 0.5rem 0; color: var(--color-text-secondary);">Corpus Partition Security</h4>
+                <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between; padding: 0.35rem 0.5rem; background: var(--color-bg-subtle); border-radius: var(--radius-sm);">
+                    <span>Development Partition (36 records):</span>
+                    <strong>Public &amp; Testable</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 0.35rem 0.5rem; background: var(--color-bg-subtle); border-radius: var(--radius-sm);">
+                    <span>Validation Partition (12 records):</span>
+                    <strong>Public &amp; Testable</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 0.35rem 0.5rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm);">
+                    <span style="color: #991b1b; font-weight: 600;">Locked Test Partition (12 records):</span>
+                    <strong style="color: #991b1b;">Protected · Ineligible for Intake</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category Coverage Table -->
+          <div class="card" style="box-shadow: none; border: 1px solid var(--color-border); margin: 0;">
+            <div class="card-header" style="border-bottom: 1px solid var(--color-border); padding: 0.75rem 1rem;">
+              <h3 style="font-size: 0.95rem; margin: 0;">
+                Category Coverage Matrix (24 Evaluation Scenarios across 60 Records)
+              </h3>
+            </div>
+            <div class="table-container" style="max-height: 420px; overflow-y: auto;">
+              <table class="data-table" id="category-coverage-table">
+                <thead>
+                  <tr>
+                    <th>Scenario Category</th>
+                    <th>Records</th>
+                    <th>Dev</th>
+                    <th>Val</th>
+                    <th>Locked</th>
+                    <th>Intended Evaluation Objective</th>
+                  </tr>
+                </thead>
+                <tbody id="category-coverage-body">
+                  <tr><td colspan="6" class="empty-state">Loading category distribution…</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 

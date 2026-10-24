@@ -10,13 +10,25 @@ def _normalise(value: str) -> str:
     return re.sub(r"\s+", " ", value.lower().strip())
 
 
+def _normalise_for_match(value: str) -> str:
+    """Normalise product text for matching, with safe handling of trailing unit words."""
+    normalized = _normalise(value)
+    # Strip trailing "bar" or "bars" if present (common product descriptor)
+    # This allows "soap bars" to match "soap" in the catalogue
+    if normalized.endswith(" bars"):
+        normalized = normalized[:-5].strip()
+    elif normalized.endswith(" bar"):
+        normalized = normalized[:-4].strip()
+    return normalized
+
+
 class Catalogue:
     def __init__(self, path: Path):
         with path.open(encoding="utf-8", newline="") as handle:
             self.products = list(csv.DictReader(handle))
 
     def match(self, product_text: str) -> list[dict]:
-        needle = _normalise(product_text)
+        needle = _normalise_for_match(product_text)
         matches: list[dict] = []
         for item in self.products:
             terms = [item["sku"], item["name"], *item["aliases"].split("|")]
