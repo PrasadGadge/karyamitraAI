@@ -4,6 +4,7 @@ import csv
 import io
 import json
 from pathlib import Path
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse, JSONResponse
@@ -28,6 +29,7 @@ app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 class ProcessRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     source_record_id: str | None = None
+    extraction_method: Literal["rules", "llm"] = "rules"
 
 
 class CorrectRequest(BaseModel):
@@ -63,7 +65,7 @@ def get_dataset():
 
 @app.post("/api/orders/process")
 def process_order(request: ProcessRequest):
-    return service.process(request.message, request.source_record_id)
+    return service.process(request.message, request.source_record_id, request.extraction_method)
 
 
 @app.get("/api/orders")

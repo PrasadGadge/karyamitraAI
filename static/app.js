@@ -206,6 +206,12 @@
       </div>
     ` : '';
 
+    const fallbackHtml = order.fallback_reason ? `
+      <div class="alert-banner warning" style="margin-bottom:0.75rem;">
+        <strong>LLM fallback:</strong> ${escapeHtml(order.fallback_reason)} Rules-based extraction was used instead.
+      </div>
+    ` : '';
+
     // Safeguards explanation
     let safeguardExplanation = '';
     if (order.state === 'VERIFIED') {
@@ -225,7 +231,8 @@
         <div class="order-meta-group">
           <span class="order-id-label">ID: ${escapeHtml(order.id.slice(0, 8))}…</span>
           <span class="status-badge ${order.state}">${order.state}</span>
-          <span class="meta-pill">Parser: ${escapeHtml(order.parser.method)} v${escapeHtml(order.parser.version)}</span>
+          <span class="meta-pill">Actual parser: ${escapeHtml(order.parser.method)} v${escapeHtml(order.parser.version)}</span>
+          ${order.parser.requested_method !== order.parser.method ? `<span class="meta-pill">Requested: ${escapeHtml(order.parser.requested_method)}</span>` : ''}
         </div>
         <div class="order-duration">
           Duration: <strong>${order.processing_duration_ms} ms</strong> · Corrections: <strong>${order.correction_count}</strong>
@@ -233,6 +240,7 @@
       </div>
 
       ${errorHtml}
+      ${fallbackHtml}
 
       <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: baseline;">
         <h3 style="font-size: 0.95rem; margin: 0; color: var(--color-text-secondary);">
@@ -985,7 +993,7 @@
         const result = await api('/api/orders/process', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, source_record_id: sourceRecordId })
+          body: JSON.stringify({ message, source_record_id: sourceRecordId, extraction_method: $('extraction-method').value })
         });
 
         renderOrderResult(result);

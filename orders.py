@@ -7,25 +7,36 @@ from datetime import datetime, timezone
 
 from catalogue import Catalogue
 from extraction import extract
+from llm_extraction import LLMExtractionError, OpenRouterExtractionAdapter
 
 STATES = {"DRAFT", "NEEDS_CLARIFICATION", "VERIFIED", "APPROVED", "REJECTED"}
 
 
 class OrderService:
-    def __init__(self, catalogue: Catalogue):
+    def __init__(self, catalogue: Catalogue, llm_adapter: object | None = None):
         self.catalogue = catalogue
+        self.llm_adapter = llm_adapter or OpenRouterExtractionAdapter.from_environment()
         self.orders: dict[str, dict] = {}
 
     @staticmethod
     def _event(event: str, detail: str = "") -> dict:
         return {"at": datetime.now(timezone.utc).isoformat(), "event": event, "detail": detail}
 
-    def process(self, message: str, source_record_id: str | None = None) -> dict:
+    def process(self, message: str, source_record_id: str | None = None, extraction_method: str = "rules") -> dict:
         started = time.perf_counter()
         order_id = str(uuid.uuid4())
         trace = [self._event("record_loaded", source_record_id or "direct message")]
+        fallback_reason = None
         try:
-            parsed = extract(message)
+            if extraction_method == "llm":
+                try:
+                    parsed = self.llm_adapter.extract(message)
+                except LLMExtractionError as exc:
+                    parsed = extract(message)
+                    fallback_reason = str(exc)
+                    trace.append(self._event("llm_fallback_to_rules", fallback_reason))
+            else:
+                parsed = extract(message)
             trace.append(self._event("extraction_executed", f"{len(parsed['lines'])} line(s)"))
             lines = [self.catalogue.validate_line(line) for line in parsed["lines"]]
             trace.append(self._event("catalogue_lookup_completed"))
@@ -40,7 +51,7 @@ class OrderService:
             state = "DRAFT"
             trace.append(self._event("processing_error", error))
         duration = round((time.perf_counter() - started) * 1000, 3)
-        order = {"id": order_id, "source_record_id": source_record_id, "original_message": message, "parser": {"method": parsed["method"], "version": parsed["version"]}, "extracted_lines": parsed["lines"], "unrecognised_text": parsed["unrecognised_text"], "lines": lines, "state": state, "processing_duration_ms": duration, "error": error, "trace": trace, "correction_count": 0, "created_at": datetime.now(timezone.utc).isoformat()}
+        order = {"id": order_id, "source_record_id": source_record_id, "original_message": message, "parser": {"method": parsed["method"], "requested_method": extraction_method, "version": parsed["version"]}, "extracted_lines": parsed["lines"], "unrecognised_text": parsed["unrecognised_text"], "delivery_instructions": parsed.get("delivery_instructions"), "missing_fields": parsed.get("missing_fields", []), "ambiguous_fields": parsed.get("ambiguous_fields", []), "fallback_reason": fallback_reason, "lines": lines, "state": state, "processing_duration_ms": duration, "error": error, "trace": trace, "correction_count": 0, "created_at": datetime.now(timezone.utc).isoformat()}
         self.orders[order_id] = order
         return order
 

@@ -13,7 +13,7 @@ KaryaMitra AI turns a small set of supported informal order messages into catalo
 
 ## Architecture
 
-`static UI → FastAPI (app.py) → extraction.py → catalogue.py → orders.py → in-memory result/trace`
+`static UI → FastAPI (app.py) → rules or optional OpenRouter extraction → catalogue.py → orders.py → in-memory result/trace`
 
 The browser only displays results returned by the API; matching and validation run in Python. Data is loaded from `data/products.csv` and `data/sample_orders.json` at application startup. Orders are intentionally in memory, so they disappear when the server restarts.
 
@@ -36,6 +36,12 @@ Open `http://127.0.0.1:8000`. The interactive API documentation is at `http://12
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
 ```
+
+## Optional LLM extraction
+
+Rules-based extraction is the default and remains fully usable without LLM configuration. To enable OpenRouter extraction, copy `.env.example` to `.env` and set both `OPENROUTER_API_KEY` and `OPENROUTER_MODEL`; never commit `.env`. Select **LLM-based parser** in the Order Workspace. The backend masks confidently identified labelled customer names, supported phone numbers, and email addresses before making an external request, then passes the proposal through the same catalogue validation and human approval safeguards as the rules parser.
+
+Masking is risk reduction, not a guarantee of anonymity: free-form text can contain identifiers the conservative detector does not recognise. Do not send sensitive customer information unless external processing is authorised. LLM output cannot supply authoritative prices, SKUs, inventory, pack definitions, or approval decisions. If configuration is absent or the provider fails, the UI reports the reason and uses the rules parser instead.
 
 ## API endpoints
 
