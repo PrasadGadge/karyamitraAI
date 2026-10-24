@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -44,15 +45,20 @@ def http_post_expect_error(path, data=None):
         return e.code, e.read().decode('utf-8')
 
 def run_headless_browser(url, width=1280, height=800):
+    import tempfile
+    td = tempfile.mkdtemp()
     cmd = [
         EDGE_PATH,
-        "--headless=new",
+        "--headless",
+        "--no-sandbox",
         "--disable-gpu",
+        "--no-first-run",
+        f"--user-data-dir={td}",
         f"--window-size={width},{height}",
         "--dump-dom",
         url
     ]
-    res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', timeout=15)
+    res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', timeout=20)
     return res.stdout
 
 def main():

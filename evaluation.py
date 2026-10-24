@@ -34,7 +34,8 @@ def validate_records(records: list[dict], permitted_splits: set[str]) -> list[st
         record_id = record.get("record_id")
         if not record_id or record_id in ids:
             issues.append(f"record {index} has missing or duplicate record_id")
-        ids.add(record_id)
+        if isinstance(record_id, str):
+            ids.add(record_id)
         if record.get("split") not in permitted_splits:
             issues.append(f"{record_id}: unsupported split")
         if record.get("annotation_status") not in REVIEW_STATES:
