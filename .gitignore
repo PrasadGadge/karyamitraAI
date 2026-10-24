@@ -7,4 +7,13 @@ exports/
 evaluation_runs/
 data/review_artifacts/
 *.log
+*.db
+*.db-shm
+*.db-wal
 
+
+# Local-only files
+.env
+*.db
+__pycache__/
+.pytest_cache/

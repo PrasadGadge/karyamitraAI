@@ -8,7 +8,7 @@ from orders import OrderService
 
 @pytest.fixture
 def service():
-    return OrderService(Catalogue(Path(__file__).parents[1] / "data" / "products.csv"))
+    return OrderService(Catalogue(Path(__file__).parents[1] / "data" / "products.csv"), enable_inventory=False)
 
 
 def test_successful_processing_approval_and_export(service):

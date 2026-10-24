@@ -1211,3 +1211,4 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 480px) {
   .metrics-grid { grid-template-columns: 1fr; }
 }
+.demo-label { background-color: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-left: 10px; }

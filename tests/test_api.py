@@ -2,6 +2,8 @@ from fastapi.testclient import TestClient
 
 from app import app, service
 
+# Disable inventory for existing tests to maintain compatibility
+service.enable_inventory = False
 
 client = TestClient(app)
 

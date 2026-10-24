@@ -44,22 +44,38 @@
         Dataset Explorer
         <span class="tab-badge" id="badge-dataset-count">60</span>
       </button>
+      <button class="nav-tab" data-tab="products" id="tab-btn-products">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        Products
+      </button>
+      <button class="nav-tab" data-tab="inventory" id="tab-btn-inventory">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Inventory
+      </button>
+      <button class="nav-tab" data-tab="movements" id="tab-btn-movements">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+        Movements
+      </button>
+      <button class="nav-tab" data-tab="transport" id="tab-btn-transport">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+        Transport
+      </button>
       <button class="nav-tab" data-tab="review" id="tab-btn-review">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-        Human Review
+        Review
         <span class="tab-badge" id="badge-review-state">—</span>
       </button>
       <button class="nav-tab" data-tab="metrics" id="tab-btn-metrics">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-        Operational Metrics
+        Metrics
       </button>
       <button class="nav-tab" data-tab="evaluation" id="tab-btn-evaluation">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-        Evaluation Readiness
+        Evaluation
       </button>
       <button class="nav-tab" data-tab="audit" id="tab-btn-audit">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-        Activity &amp; Audit
+        Audit
       </button>
     </div>
   </nav>
@@ -118,14 +134,14 @@
           <span>·</span>
           <span>Approved: <strong id="bar-approved-orders" style="color:#065f46;">0</strong></span>
           <span>·</span>
+          <span>Low Stock: <strong id="bar-low-stock" style="color:var(--color-warning-text);">0</strong></span>
+          <span>·</span>
+          <span>In Transit: <strong id="bar-in-transit" style="color:var(--color-primary);">0</strong></span>
+          <span>·</span>
           <span>Catalogue SKUs: <strong id="bar-catalogue-count">6</strong></span>
-          <span>·</span>
-          <span>Intake Samples: <strong id="bar-samples-count">6</strong></span>
-          <span>·</span>
-          <span>Corpus Readiness: <strong id="bar-dataset-readiness">60 Synthetic · Not Evaluated</strong></span>
         </div>
-        <span class="meta-pill" style="font-size:0.72rem; color:var(--color-text-muted);" title="In-memory order and audit records reset on application restart">
-          In-Memory Session (Resets on Restart) · No Persistent Analytics
+        <span class="meta-pill" style="font-size:0.72rem; color:var(--color-text-muted);" title="SQLite database; operational data persists across restarts">
+          SQLite Persistent Storage · Data Persists Across Restarts
         </span>
       </div>
 
@@ -536,7 +552,199 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- SCREEN 3: HUMAN REVIEW                     -->
+    <!-- SCREEN 3: COMPANY PRODUCTS                  -->
+    <!-- ========================================== -->
+    <div class="tab-pane" id="view-products">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+              Company Products Catalogue
+            </h2>
+            <p class="card-subtitle">Manage product SKUs, pricing, unit conversions, and stock thresholds.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-add-product">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add Product
+          </button>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" class="form-input search-input" id="products-search" placeholder="Search SKU, name, or aliases…">
+          <select class="form-select" id="products-filter-active" style="width: auto;">
+            <option value="">All Status</option>
+            <option value="true">Active Only</option>
+            <option value="false">Inactive Only</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="products-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Base Unit</th>
+                <th>Sellable Unit</th>
+                <th>Unit Price</th>
+                <th>Low Stock Threshold</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="products-table-body">
+              <tr><td colspan="9" class="empty-state">Loading products…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 4: INVENTORY / AVAILABLE STOCK       -->
+    <!-- ========================================== -->
+    <div class="tab-pane" id="view-inventory">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              Inventory / Available Stock
+              <span class="demo-label" id="demo-stock-label" style="display: none;">⚠ Synthetic demo stock</span>
+            </h2>
+            <p class="card-subtitle">Real-time stock levels, reservations, and availability by SKU.</p>
+          </div>
+          <div class="actions-row">
+            <label class="form-label" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" id="inventory-low-stock-only">
+              Show Low Stock Only
+            </label>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="inventory-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>On-Hand</th>
+                <th>Reserved</th>
+                <th>Available</th>
+                <th>Incoming</th>
+                <th>Low Stock Threshold</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-table-body">
+              <tr><td colspan="9" class="empty-state">Loading inventory…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 5: STOCK MOVEMENTS                   -->
+    <!-- ========================================== -->
+    <div class="tab-pane" id="view-movements">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+              Stock Movements Ledger
+            </h2>
+            <p class="card-subtitle">Complete audit trail of all incoming, outgoing, and adjustment transactions.</p>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" class="form-input search-input" id="movements-search-sku" placeholder="Filter by SKU…">
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="movements-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Quantity Delta</th>
+                <th>Movement Type</th>
+                <th>Reference</th>
+                <th>Reason</th>
+                <th>Actor</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="movements-table-body">
+              <tr><td colspan="9" class="empty-state">Loading movements…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 6: TRANSPORT & DELIVERY              -->
+    <!-- ========================================== -->
+    <div class="tab-pane" id="view-transport">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+              Transport &amp; Delivery Management
+            </h2>
+            <p class="card-subtitle">Create shipments, track delivery status, and manage transport logistics.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-create-shipment">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Create Shipment
+          </button>
+        </div>
+
+        <div class="filter-bar">
+          <select class="form-select" id="shipments-filter-status" style="width: auto;">
+            <option value="">All Statuses</option>
+            <option value="planned">Planned</option>
+            <option value="ready">Ready</option>
+            <option value="in_transit">In Transit</option>
+            <option value="delivered">Delivered</option>
+            <option value="delayed">Delayed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="shipments-table">
+            <thead>
+              <tr>
+                <th>Shipment ID</th>
+                <th>Order ID</th>
+                <th>Transporter</th>
+                <th>Tracking Ref</th>
+                <th>Status</th>
+                <th>Dispatch Date</th>
+                <th>Expected Delivery</th>
+                <th>Actual Delivery</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="shipments-table-body">
+              <tr><td colspan="9" class="empty-state">Loading shipments…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 7: HUMAN REVIEW                     -->
     <!-- ========================================== -->
     <div class="tab-pane" id="view-review">
       <div class="card">

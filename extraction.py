@@ -67,24 +67,33 @@ def extract(message: str) -> dict:
     # Don't strip trailing words like "pathav" before pattern matching
     # Only strip them for fallback processing
 
-    for match in _PRODUCT_PATTERN.finditer(cleaned):
-        quantity = int(match.group("quantity"))
-        unit_raw = match.group("unit").lower()
-        product = match.group("product").strip()
-        # Strip trailing "and" if present
-        if product.lower().endswith(" and"):
-            product = product[:-4].strip()
+    # Split the message on "and"/"ani" first to handle repeated patterns
+    # This is necessary because the regex lookahead stops at separators
+    segments = re.split(r"\s+(?:and\b|\bani\b)\s+", cleaned, flags=re.I)
+    
+    for segment in segments:
+        segment = segment.strip()
+        if not segment:
+            continue
+            
+        for match in _PRODUCT_PATTERN.finditer(segment):
+            quantity = int(match.group("quantity"))
+            unit_raw = match.group("unit").lower()
+            product = match.group("product").strip()
+            # Strip trailing "and" if present
+            if product.lower().endswith(" and"):
+                product = product[:-4].strip()
 
-        unit = _UNITS.get(unit_raw)
-        source_text = match.group(0).strip()
+            unit = _UNITS.get(unit_raw)
+            source_text = match.group(0).strip()
 
-        line = ExtractedLine(
-            product_text=product,
-            quantity=quantity,
-            unit=unit,
-            source_text=source_text
-        )
-        lines.append(asdict(line))
+            line = ExtractedLine(
+                product_text=product,
+                quantity=quantity,
+                unit=unit,
+                source_text=source_text
+            )
+            lines.append(asdict(line))
 
     # If no patterns found, fall back to segment-based extraction
     if not lines:

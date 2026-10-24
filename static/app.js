@@ -103,6 +103,10 @@
     if (tabId === 'evaluation') refreshEvaluation();
     if (tabId === 'audit') renderAuditView();
     if (tabId === 'review') renderReviewView();
+    if (tabId === 'products') loadProductsTable();
+    if (tabId === 'inventory') loadInventoryTable();
+    if (tabId === 'movements') loadMovementsTable();
+    if (tabId === 'transport') loadShipmentsTable();
   }
 
   // Sub-Tab Switcher for Dataset Explorer
@@ -1418,6 +1422,229 @@
       state.catalogueSearch = e.target.value;
       renderCatalogueTable();
     });
+
+    // Products Search
+    const productsSearch = $('products-search');
+    if (productsSearch) {
+      productsSearch.addEventListener('input', loadProductsTable);
+    }
+
+    const productsFilterActive = $('products-filter-active');
+    if (productsFilterActive) {
+      productsFilterActive.addEventListener('change', loadProductsTable);
+    }
+
+    // Inventory Low Stock Filter
+    const inventoryLowStock = $('inventory-low-stock-only');
+    if (inventoryLowStock) {
+      inventoryLowStock.addEventListener('change', loadInventoryTable);
+    }
+
+    // Movements Search
+    const movementsSearch = $('movements-search-sku');
+    if (movementsSearch) {
+      movementsSearch.addEventListener('input', loadMovementsTable);
+    }
+
+    // Shipments Filter
+    const shipmentsFilterStatus = $('shipments-filter-status');
+    if (shipmentsFilterStatus) {
+      shipmentsFilterStatus.addEventListener('change', loadShipmentsTable);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // SCREEN 3: COMPANY PRODUCTS
+  // -------------------------------------------------------------
+  async function loadProductsTable() {
+    try {
+      const search = $('products-search')?.value || '';
+      const activeFilter = $('products-filter-active')?.value || '';
+      const is_active = activeFilter === '' ? null : activeFilter === 'true';
+      
+      const data = await api(`/api/products?search=${encodeURIComponent(search)}&is_active=${is_active !== null ? is_active : ''}`);
+      renderProductsTable(data.records || []);
+    } catch (err) {
+      console.error('Failed to load products:', err);
+    }
+  }
+
+  function renderProductsTable(products) {
+    const tbody = $('products-table-body');
+    if (!tbody) return;
+
+    if (!products.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No products found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = products.map(p => `
+      <tr>
+        <td><span class="sku-pill">${escapeHtml(p.sku)}</span></td>
+        <td><strong>${escapeHtml(p.name)}</strong></td>
+        <td>${escapeHtml(p.category)}</td>
+        <td>${escapeHtml(p.base_unit)}</td>
+        <td>${escapeHtml(p.sellable_unit)}</td>
+        <td>${formatCurrency(p.unit_price)}</td>
+        <td>${p.low_stock_threshold}</td>
+        <td><span class="status-badge ${p.is_active ? 'VERIFIED' : 'DRAFT'}">${p.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="showStatus('Edit product feature coming soon', 'info')">Edit</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // -------------------------------------------------------------
+  // SCREEN 4: INVENTORY
+  // -------------------------------------------------------------
+  async function loadInventoryTable() {
+    try {
+      const lowStockOnly = $('inventory-low-stock-only')?.checked || false;
+      const data = await api(`/api/inventory?low_stock_only=${lowStockOnly}`);
+      renderInventoryTable(data.records || []);
+    } catch (err) {
+      console.error('Failed to load inventory:', err);
+    }
+  }
+
+  function renderInventoryTable(inventory) {
+    const tbody = $('inventory-table-body');
+    if (!tbody) return;
+
+    if (!inventory.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No inventory records found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = inventory.map(inv => {
+      const isLowStock = inv.available_quantity <= inv.low_stock_threshold;
+      const statusClass = isLowStock ? 'warning' : 'VERIFIED';
+      const statusText = isLowStock ? 'Low Stock' : 'OK';
+      
+      return `
+      <tr>
+        <td><span class="sku-pill">${escapeHtml(inv.sku)}</span></td>
+        <td><strong>${escapeHtml(inv.name)}</strong></td>
+        <td>${inv.on_hand_quantity} ${escapeHtml(inv.sellable_unit)}</td>
+        <td>${inv.reserved_quantity}</td>
+        <td><strong style="color: ${isLowStock ? 'var(--color-warning-text)' : 'var(--color-success-text)'}">${inv.available_quantity}</strong></td>
+        <td>${inv.incoming_quantity}</td>
+        <td>${inv.low_stock_threshold}</td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="showStatus('Adjust stock feature coming soon', 'info')">Adjust</button>
+        </td>
+      </tr>
+    `;
+    }).join('');
+  }
+
+  // -------------------------------------------------------------
+  // SCREEN 5: STOCK MOVEMENTS
+  // -------------------------------------------------------------
+  async function loadMovementsTable() {
+    try {
+      const sku = $('movements-search-sku')?.value || '';
+      const data = await api(`/api/stock-movements?sku=${encodeURIComponent(sku)}`);
+      renderMovementsTable(data.records || []);
+    } catch (err) {
+      console.error('Failed to load movements:', err);
+    }
+  }
+
+  function renderMovementsTable(movements) {
+    const tbody = $('movements-table-body');
+    if (!tbody) return;
+
+    if (!movements.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No stock movements found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = movements.map(m => {
+      const deltaClass = m.quantity > 0 ? 'success' : 'danger';
+      const deltaPrefix = m.quantity > 0 ? '+' : '';
+      
+      return `
+      <tr>
+        <td>${m.id}</td>
+        <td><span class="sku-pill">${escapeHtml(m.sku)}</span></td>
+        <td>${escapeHtml(m.product_name)}</td>
+        <td><span class="status-badge ${deltaClass}">${deltaPrefix}${m.quantity}</span></td>
+        <td>${escapeHtml(m.movement_type)}</td>
+        <td>${escapeHtml(m.reference_id || '—')}</td>
+        <td>${escapeHtml(m.reason || '—')}</td>
+        <td>${escapeHtml(m.actor)}</td>
+        <td>${formatTime(m.created_at)}</td>
+      </tr>
+    `;
+    }).join('');
+  }
+
+  // -------------------------------------------------------------
+  // SCREEN 6: TRANSPORT & DELIVERY
+  // -------------------------------------------------------------
+  async function loadShipmentsTable() {
+    try {
+      const status = $('shipments-filter-status')?.value || '';
+      const data = await api(`/api/shipments?status=${encodeURIComponent(status)}`);
+      renderShipmentsTable(data.records || []);
+    } catch (err) {
+      console.error('Failed to load shipments:', err);
+    }
+  }
+
+  function renderShipmentsTable(shipments) {
+    const tbody = $('shipments-table-body');
+    if (!tbody) return;
+
+    if (!shipments.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No shipments found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = shipments.map(s => {
+      const statusClass = s.status === 'delivered' ? 'success' : s.status === 'in_transit' ? 'VERIFIED' : s.status === 'delayed' ? 'warning' : 'DRAFT';
+      
+      return `
+      <tr>
+        <td><span class="sku-pill">${escapeHtml(s.id.slice(0, 8))}…</span></td>
+        <td><span class="sku-pill">${escapeHtml(s.order_id.slice(0, 8))}…</span></td>
+        <td>${escapeHtml(s.transporter_name || '—')}</td>
+        <td>${escapeHtml(s.tracking_reference || '—')}</td>
+        <td><span class="status-badge ${statusClass}">${escapeHtml(s.status)}</span></td>
+        <td>${s.dispatch_date ? formatTime(s.dispatch_date) : '—'}</td>
+        <td>${s.expected_delivery_date ? formatTime(s.expected_delivery_date) : '—'}</td>
+        <td>${s.actual_delivery_date ? formatTime(s.actual_delivery_date) : '—'}</td>
+        <td>
+          ${s.status === 'ready' ? '<button class="btn btn-success btn-sm" onclick="dispatchShipment(\'' + s.id + '\')">Dispatch</button>' : ''}
+          ${s.status === 'in_transit' ? '<button class="btn btn-primary btn-sm" onclick="markDelivered(\'' + s.id + '\')">Delivered</button>' : ''}
+        </td>
+      </tr>
+    `;
+    }).join('');
+  }
+
+  async function dispatchShipment(shipmentId) {
+    try {
+      await api(`/api/shipments/${shipmentId}/dispatch`, { method: 'POST' });
+      showStatus('Shipment dispatched successfully', 'success');
+      loadShipmentsTable();
+      loadInventoryTable();
+    } catch (err) {
+      showStatus(`Failed to dispatch: ${err.message}`, 'danger');
+    }
+  }
+
+  async function markDelivered(shipmentId) {
+    try {
+      await api(`/api/shipments/${shipmentId}/deliver`, { method: 'POST' });
+      showStatus('Shipment marked as delivered', 'success');
+      loadShipmentsTable();
+    } catch (err) {
+      showStatus(`Failed to mark delivered: ${err.message}`, 'danger');
+    }
   }
 
   // App Startup
@@ -1427,10 +1654,11 @@
     await loadDatasetExplorer();
     await refreshMetrics();
     await refreshEvaluation();
+    await updateDashboardSummary();
 
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
-    if (tabParam && ['workspace', 'dataset', 'review', 'metrics', 'evaluation', 'audit'].includes(tabParam)) {
+    if (tabParam && ['workspace', 'dataset', 'products', 'inventory', 'movements', 'transport', 'review', 'metrics', 'evaluation', 'audit'].includes(tabParam)) {
       switchTab(tabParam);
     }
     const subtabParam = params.get('subtab');
@@ -1444,6 +1672,21 @@
     if (params.get('auto_process') === '1') {
       const btn = $('btn-process');
       if (btn) btn.click();
+    }
+  }
+
+  async function updateDashboardSummary() {
+    try {
+      const summary = await api('/api/dashboard/summary');
+      if ($('bar-low-stock')) $('bar-low-stock').textContent = summary.low_stock_products;
+      if ($('bar-in-transit')) $('bar-in-transit').textContent = summary.in_transit_shipments;
+      
+      // Show demo stock label if demo mode is active
+      if (summary.demo_mode && $('demo-stock-label')) {
+        $('demo-stock-label').style.display = 'inline';
+      }
+    } catch (err) {
+      console.error('Failed to load dashboard summary:', err);
     }
   }
 
