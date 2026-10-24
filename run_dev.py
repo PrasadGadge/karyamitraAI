@@ -7,7 +7,10 @@ from pathlib import Path
 import uvicorn
 
 PROJECT_DIR = Path(__file__).resolve().parent
-RELOAD_EXCLUDES = (PROJECT_DIR / ".venv", PROJECT_DIR / "evaluation_runs")
+# Uvicorn resolves these as working-directory-relative glob patterns.  The
+# trailing wildcard is required for its Watchfiles filter to reject events
+# reported with absolute paths.  Passing them here avoids PowerShell expansion.
+RELOAD_EXCLUDES = (".venv/*", "evaluation_runs/*")
 
 
 def run(port: int = 8000) -> None:
@@ -18,7 +21,7 @@ def run(port: int = 8000) -> None:
         port=port,
         reload=True,
         reload_dirs=[str(PROJECT_DIR)],
-        reload_excludes=[str(path) for path in RELOAD_EXCLUDES],
+        reload_excludes=list(RELOAD_EXCLUDES),
     )
 
 

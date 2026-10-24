@@ -11,5 +11,5 @@ def test_runner_uses_programmatic_reload_configuration(monkeypatch):
     assert captured["reload"] is True
     assert captured["port"] == 8123
     assert captured["reload_dirs"] == [str(run_dev.PROJECT_DIR)]
-    assert captured["reload_excludes"] == [str(run_dev.PROJECT_DIR / ".venv"), str(run_dev.PROJECT_DIR / "evaluation_runs")]
-    assert Path(run_dev.PROJECT_DIR).name == "KaryaMitra AI"
+    assert captured["reload_excludes"] == [".venv/*", "evaluation_runs/*"]
+    assert run_dev.PROJECT_DIR == Path(run_dev.__file__).resolve().parent
