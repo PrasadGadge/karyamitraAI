@@ -5,11 +5,29 @@ import json
 import os
 import re
 import socket
+from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+# Load .env file if it exists
+def _load_env():
+    env_path = Path(__file__).parent / ".env"
+    if env_path.exists():
+        try:
+            with env_path.open(encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        key, value = line.split("=", 1)
+                        os.environ.setdefault(key.strip(), value.strip())
+        except Exception:
+            # Silent failure: .env loading is optional
+            pass
+
+_load_env()
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 _PHONE = re.compile(r"(?<!\d)(?:\+?91[-\s]?)?[6-9]\d{4}[-\s]?\d{5}(?!\d)")
