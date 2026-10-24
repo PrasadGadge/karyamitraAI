@@ -40,6 +40,17 @@ def test_orders_list_endpoint_tracks_processed_orders():
     assert len(res_after["records"]) == 1
 
 
+def test_llm_request_without_configuration_falls_back_to_rules(monkeypatch):
+    from llm_extraction import OpenRouterExtractionAdapter
+
+    monkeypatch.setattr(service, "llm_adapter", OpenRouterExtractionAdapter(api_key=None, model=None))
+    result = client.post("/api/orders/process", json={"message": "Send 1 bottle oil.", "extraction_method": "llm"}).json()
+    assert result["parser"]["requested_method"] == "llm"
+    assert result["parser"]["method"] == "rules"
+    assert "unavailable" in result["fallback_reason"].lower()
+    assert result["lines"][0]["sku"] == "SYN-OIL-500"
+
+
 def test_evaluation_records_endpoint_does_not_leak_locked_ground_truth():
     res = client.get("/api/evaluation/records")
     assert res.status_code == 200
