@@ -212,6 +212,15 @@
       </div>
     ` : '';
 
+    const proposalHtml = (order.delivery_instructions || order.missing_fields?.length || order.ambiguous_fields?.length) ? `
+      <div class="alert-banner info" style="margin-bottom:0.75rem;">
+        <strong>LLM extraction notes:</strong>
+        ${order.delivery_instructions ? ` ${escapeHtml(order.delivery_instructions)}` : ''}
+        ${order.missing_fields?.length ? ` Missing: ${order.missing_fields.map(escapeHtml).join(', ')}.` : ''}
+        ${order.ambiguous_fields?.length ? ` Ambiguous: ${order.ambiguous_fields.map(escapeHtml).join(', ')}.` : ''}
+      </div>
+    ` : '';
+
     // Safeguards explanation
     let safeguardExplanation = '';
     if (order.state === 'VERIFIED') {
@@ -241,6 +250,7 @@
 
       ${errorHtml}
       ${fallbackHtml}
+      ${proposalHtml}
 
       <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: baseline;">
         <h3 style="font-size: 0.95rem; margin: 0; color: var(--color-text-secondary);">
