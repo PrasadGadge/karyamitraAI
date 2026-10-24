@@ -207,20 +207,33 @@ def main():
         check(metrics["rejected_orders"] == 1, f"Rejected counter is 1: {metrics['rejected_orders']}")
         check(metrics["corrections"] == 1, f"Corrections counter is 1: {metrics['corrections']}")
 
-        log("12. Testing Headless Edge Browser DOM Rendering (Desktop width: 1280px)...")
+        log("12. Testing LLM Selection with Safe Unconfigured Fallback...")
+        status, llm_order = http_post("/api/orders/process", {
+            "message": "Send 1 bottle oil.",
+            "extraction_method": "llm"
+        })
+        check(status == 200, "LLM request returns 200 via fallback")
+        check(llm_order["parser"]["requested_method"] == "llm", "Requested method was recorded as 'llm'")
+        check(llm_order["parser"]["method"] == "rules", "Actual parser safely fell back to 'rules'")
+        check(llm_order["fallback_reason"] is not None and "unavailable" in llm_order["fallback_reason"].lower(), "Fallback reason explicitly records unavailable configuration")
+        check(llm_order["state"] == "VERIFIED", "Fallback order verified against catalogue")
+
+        log("13. Testing Headless Edge Browser DOM Rendering (Desktop width: 1280px)...")
         rendered_dom = run_headless_browser(BASE_URL, 1280, 800)
         check("KaryaMitra AI" in rendered_dom, "Browser rendered 'KaryaMitra AI' heading")
         check("Order Intake" in rendered_dom, "Browser rendered 'Order Intake' section")
         check("Dataset Explorer" in rendered_dom, "Browser rendered 'Dataset Explorer' nav tab")
         check("Operational Metrics" in rendered_dom, "Browser rendered 'Operational Metrics' nav tab")
         check("Human Review" in rendered_dom, "Browser rendered 'Human Review' nav tab")
+        check("Dataset Transparency &amp; Health Notice" in rendered_dom or "Dataset Transparency" in rendered_dom, "Browser rendered Dataset Health Notice")
+        check("record-detail-modal" in rendered_dom, "Browser rendered Record Details modal component")
 
-        log("13. Testing Headless Edge Browser DOM Rendering (Mobile width: 375px)...")
+        log("14. Testing Headless Edge Browser DOM Rendering (Mobile width: 375px)...")
         mobile_dom = run_headless_browser(BASE_URL, 375, 812)
         check("KaryaMitra AI" in mobile_dom, "Mobile view rendered title properly")
         check("workspace-grid" in mobile_dom, "Mobile responsive container active")
 
-        log("ALL 13 BROWSER & API VERIFICATION SUITES PASSED PERFECTLY!")
+        log("ALL BROWSER & API VERIFICATION SUITES PASSED PERFECTLY!")
 
     finally:
         server_process.terminate()

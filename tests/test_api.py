@@ -11,7 +11,9 @@ def setup_function():
 
 
 def test_health_catalogue_dataset_and_metrics_are_live_data():
-    assert client.get("/api/health").json()["status"] == "ok"
+    health = client.get("/api/health").json()
+    assert health["status"] == "ok"
+    assert "llm_configured" in health
     assert len(client.get("/api/catalogue").json()["records"]) == 6
     assert len(client.get("/api/dataset").json()["records"]) == 6
     assert client.get("/api/metrics").json()["orders_processed"] == 0

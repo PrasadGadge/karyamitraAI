@@ -50,7 +50,17 @@ def index():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "catalogue_records": len(catalogue.products), "dataset_records": len(dataset), "persistence": "in-memory; orders reset on restart"}
+    llm_adapter = getattr(service, "llm_adapter", None)
+    is_avail = bool(getattr(llm_adapter, "is_available", False))
+    model_name = getattr(llm_adapter, "model", "") or None
+    return {
+        "status": "ok",
+        "catalogue_records": len(catalogue.products),
+        "dataset_records": len(dataset),
+        "persistence": "in-memory; orders reset on restart",
+        "llm_configured": is_avail,
+        "llm_model": model_name,
+    }
 
 
 @app.get("/api/catalogue")

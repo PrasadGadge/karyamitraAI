@@ -1,6 +1,6 @@
 /**
  * KaryaMitra AI - Enterprise MSME Order Automation & Verification Console
- * Phase 3A: Live Backend Integration & Production-Ready UI
+ * Phase 3C: UI Excellence and Dataset Transparency
  */
 (function () {
   'use strict';
@@ -14,11 +14,13 @@
     evalRecords: [],
     evalSummary: null,
     metricsData: null,
+    healthData: null,
     activeTab: 'workspace',
     activeSubTab: 'eval',
     evalFilter: {
       split: 'all',
       category: '',
+      language: '',
       search: '',
       page: 1,
       pageSize: 10
@@ -33,7 +35,7 @@
   }[c]));
 
   function formatCurrency(num) {
-    if (num === null || num === undefined || isNaN(num)) return '—';
+    if (num === null || num === undefined || isNaN(num)) return '<span style="color:var(--color-text-muted);">—</span>';
     return '₹' + Number(num).toFixed(2);
   }
 
@@ -115,6 +117,39 @@
   }
 
   // -------------------------------------------------------------
+  // HEALTH & LLM CONFIGURATION
+  // -------------------------------------------------------------
+  async function checkHealthAndLLM() {
+    try {
+      const health = await api('/api/health');
+      state.healthData = health;
+
+      const llmHint = $('llm-status-hint');
+      const llmText = $('llm-config-text');
+      const evalLlmBadge = $('eval-llm-config-badge');
+
+      if (health.llm_configured) {
+        const modelName = health.llm_model || 'Configured Model';
+        if (llmHint) llmHint.textContent = `Live model: ${modelName}`;
+        if (llmText) llmText.textContent = `OpenRouter adapter configured with model: ${modelName}. Live requests will be sent when selected.`;
+        if (evalLlmBadge) {
+          evalLlmBadge.className = 'status-badge VERIFIED';
+          evalLlmBadge.textContent = `Configured (${modelName})`;
+        }
+      } else {
+        if (llmHint) llmHint.textContent = 'Unconfigured in environment';
+        if (llmText) llmText.textContent = 'Rules-based parser active. LLM is unconfigured (OPENROUTER_API_KEY / OPENROUTER_MODEL not set); selecting LLM will trigger safe fallback to rules.';
+        if (evalLlmBadge) {
+          evalLlmBadge.className = 'status-badge DRAFT';
+          evalLlmBadge.textContent = 'Unconfigured (Rules Primary)';
+        }
+      }
+    } catch (e) {
+      console.warn('Health check warning:', e);
+    }
+  }
+
+  // -------------------------------------------------------------
   // SCREEN 1 & 3: RENDER ORDER RESULTS AND HUMAN REVIEW
   // -------------------------------------------------------------
   function renderOrderResult(order) {
@@ -140,6 +175,32 @@
     const container = $('order-result-area');
     if (!container) return;
 
+    // Fallback banner
+    const fallbackHtml = order.fallback_reason ? `
+      <div class="alert-banner warning" style="margin-bottom:0.85rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
+        <div>
+          <strong>LLM Fallback Activated:</strong> ${escapeHtml(order.fallback_reason)}
+          <div style="font-size:0.78rem; margin-top:0.2rem; color:var(--color-text-secondary);">
+            Deterministic rules-based extraction was used to complete the request safely without service interruption.
+          </div>
+        </div>
+      </div>
+    ` : '';
+
+    // LLM proposal notes (delivery instructions, missing/ambiguous fields)
+    const proposalHtml = (order.delivery_instructions || (order.missing_fields && order.missing_fields.length) || (order.ambiguous_fields && order.ambiguous_fields.length)) ? `
+      <div class="alert-banner info" style="margin-bottom:0.85rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <div>
+          <strong>Extraction Notes:</strong>
+          ${order.delivery_instructions ? `<div><strong>Delivery instructions:</strong> ${escapeHtml(order.delivery_instructions)}</div>` : ''}
+          ${order.missing_fields && order.missing_fields.length ? `<div><strong>Identified missing fields:</strong> ${order.missing_fields.map(escapeHtml).join(', ')}</div>` : ''}
+          ${order.ambiguous_fields && order.ambiguous_fields.length ? `<div><strong>Identified ambiguous fields:</strong> ${order.ambiguous_fields.map(escapeHtml).join(', ')}</div>` : ''}
+        </div>
+      </div>
+    ` : '';
+
     const linesHtml = order.lines.map((line, idx) => {
       const isOk = line.verified;
       const findings = line.findings || [];
@@ -153,17 +214,17 @@
               #${idx + 1} "${escapeHtml(line.product_text || line.source_text)}"
             </div>
             <span class="status-badge ${isOk ? 'VERIFIED' : 'NEEDS_CLARIFICATION'}">
-              ${isOk ? '✓ Verified' : '⚠️ Action Needed'}
+              ${isOk ? '✓ Catalogue Verified' : '⚠️ Unresolved'}
             </span>
           </div>
 
           <div class="line-matched-info">
-            <strong>Matched Catalogue SKU:</strong>
+            <strong>Matched SKU:</strong>
             ${line.sku ? `<span class="sku-pill">${escapeHtml(line.sku)}</span> · <strong>${escapeHtml(line.product_name)}</strong>` : '<span style="color:#b91c1c; font-weight:600;">Unresolved — No Single Catalogue Match</span>'}
           </div>
 
           ${line.match_evidence && line.match_evidence.length > 1 ? `
-            <div style="font-size:0.78rem; background:#fffbeb; padding:0.35rem 0.5rem; border-radius:4px; margin:0.35rem 0; border:1px solid #fde68a;">
+            <div style="font-size:0.78rem; background:#fffbeb; padding:0.4rem 0.6rem; border-radius:4px; margin:0.35rem 0; border:1px solid #fde68a;">
               <strong>Ambiguous Candidate Matches (${line.match_evidence.length}):</strong>
               ${line.match_evidence.map(m => `<span class="sku-pill" style="margin-right:0.3rem;">${escapeHtml(m.sku)}: ${escapeHtml(m.name)}</span>`).join(' ')}
             </div>
@@ -171,8 +232,8 @@
 
           <div class="line-math-row">
             <div class="line-math-col">Requested: <strong>${line.quantity ?? 'None'} ${escapeHtml(line.requested_unit || 'unspecified')}</strong></div>
-            <div class="line-math-col">Converted: <strong>${line.converted_quantity !== null && line.converted_quantity !== undefined ? line.converted_quantity : '—'} ${escapeHtml(line.sellable_unit || '')}</strong></div>
-            <div class="line-math-col">Unit Price: <strong>${formatCurrency(line.unit_price)}</strong></div>
+            <div class="line-math-col">Normalized Qty: <strong>${line.converted_quantity !== null && line.converted_quantity !== undefined ? line.converted_quantity : '—'} ${escapeHtml(line.sellable_unit || '')}</strong></div>
+            <div class="line-math-col">Catalogue Price: <strong>${formatCurrency(line.unit_price)}</strong></div>
             <div class="line-math-col">Line Total: <strong>${formatCurrency(line.line_total)}</strong></div>
           </div>
 
@@ -184,7 +245,7 @@
           ` : `
             <div class="line-findings success">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Deterministic catalogue verification passed.</span>
+              <span>Catalogue verification checks passed.</span>
             </div>
           `}
         </div>
@@ -206,29 +267,14 @@
       </div>
     ` : '';
 
-    const fallbackHtml = order.fallback_reason ? `
-      <div class="alert-banner warning" style="margin-bottom:0.75rem;">
-        <strong>LLM fallback:</strong> ${escapeHtml(order.fallback_reason)} Rules-based extraction was used instead.
-      </div>
-    ` : '';
-
-    const proposalHtml = (order.delivery_instructions || order.missing_fields?.length || order.ambiguous_fields?.length) ? `
-      <div class="alert-banner info" style="margin-bottom:0.75rem;">
-        <strong>LLM extraction notes:</strong>
-        ${order.delivery_instructions ? ` ${escapeHtml(order.delivery_instructions)}` : ''}
-        ${order.missing_fields?.length ? ` Missing: ${order.missing_fields.map(escapeHtml).join(', ')}.` : ''}
-        ${order.ambiguous_fields?.length ? ` Ambiguous: ${order.ambiguous_fields.map(escapeHtml).join(', ')}.` : ''}
-      </div>
-    ` : '';
-
     // Safeguards explanation
     let safeguardExplanation = '';
     if (order.state === 'VERIFIED') {
-      safeguardExplanation = 'All line items, pack sizes, conversions, and catalogue prices verified. Ready for operator approval.';
+      safeguardExplanation = 'All line items, pack sizes, conversions, and catalogue prices verified. Ready for human sign-off.';
     } else if (order.state === 'NEEDS_CLARIFICATION') {
-      safeguardExplanation = 'Approval is locked: order contains unresolved findings or ambiguous matches. Correct the message or reject.';
+      safeguardExplanation = 'Approval locked by backend safeguards: order has unresolved items or findings. Operator must correct or reject.';
     } else if (order.state === 'APPROVED') {
-      safeguardExplanation = 'Order signed off and verified. Ready for ERP / CSV / JSON export.';
+      safeguardExplanation = 'Order signed off by operator. Ready for ERP / CSV / JSON export.';
     } else if (order.state === 'REJECTED') {
       safeguardExplanation = 'Order rejected by operator. No further actions permitted in this prototype.';
     } else {
@@ -240,8 +286,8 @@
         <div class="order-meta-group">
           <span class="order-id-label">ID: ${escapeHtml(order.id.slice(0, 8))}…</span>
           <span class="status-badge ${order.state}">${order.state}</span>
-          <span class="meta-pill">Actual parser: ${escapeHtml(order.parser.method)} v${escapeHtml(order.parser.version)}</span>
-          ${order.parser.requested_method !== order.parser.method ? `<span class="meta-pill">Requested: ${escapeHtml(order.parser.requested_method)}</span>` : ''}
+          <span class="meta-pill">Actual parser: <strong>${escapeHtml(order.parser.method)} v${escapeHtml(order.parser.version)}</strong></span>
+          ${order.parser.requested_method && order.parser.requested_method !== order.parser.method ? `<span class="meta-pill" style="color:var(--color-warning-text);">Requested: ${escapeHtml(order.parser.requested_method)}</span>` : ''}
         </div>
         <div class="order-duration">
           Duration: <strong>${order.processing_duration_ms} ms</strong> · Corrections: <strong>${order.correction_count}</strong>
@@ -252,11 +298,11 @@
       ${fallbackHtml}
       ${proposalHtml}
 
-      <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: baseline;">
+      <div style="margin-bottom: 0.65rem; display: flex; justify-content: space-between; align-items: baseline;">
         <h3 style="font-size: 0.95rem; margin: 0; color: var(--color-text-secondary);">
           Extracted Line Items (${order.lines.length})
         </h3>
-        <span style="font-size: 0.8rem; color: var(--color-text-muted);">Source: ${escapeHtml(order.source_record_id || 'Direct message')}</span>
+        <span style="font-size: 0.8rem; color: var(--color-text-muted);">Source Record: ${escapeHtml(order.source_record_id || 'Direct message')}</span>
       </div>
 
       <div class="lines-container">
@@ -294,7 +340,7 @@
       </div>
 
       <!-- In-Line Correction Box -->
-      <div style="margin-top: 1.25rem; border-top: 1px solid var(--color-border); padding-top: 1rem;">
+      <div style="margin-top: 1.15rem; border-top: 1px solid var(--color-border); padding-top: 0.85rem;">
         <label class="form-label" for="edit-message-input">
           <span>Human Correction &amp; Clarification</span>
           <span class="form-label-hint">Correction count: ${order.correction_count}</span>
@@ -309,7 +355,7 @@
       </div>
 
       <!-- Execution Trace Summary -->
-      <div style="margin-top: 1.25rem;">
+      <div style="margin-top: 1.15rem;">
         <h4 style="font-size: 0.88rem; margin: 0 0 0.5rem; color: var(--color-text-secondary);">Execution Trace (${order.trace.length} events)</h4>
         <div class="trace-timeline">
           ${order.trace.map(tr => `
@@ -326,7 +372,7 @@
       </div>
     `;
 
-    // Bind dynamic action listeners
+    // Bind action listeners
     const btnApprove = $('btn-order-approve');
     if (btnApprove) {
       btnApprove.addEventListener('click', async () => {
@@ -449,7 +495,7 @@
             "${escapeHtml(order.original_message)}"
           </div>
 
-          <h3 style="font-size: 0.95rem; margin-top: 1.25rem;">2. Natural Language Parsing</h3>
+          <h3 style="font-size: 0.95rem; margin-top: 1.15rem;">2. Natural Language Parsing</h3>
           <div class="table-container">
             <table class="data-table">
               <thead><tr><th>Source Segment</th><th>Quantity</th><th>Unit</th></tr></thead>
@@ -465,7 +511,7 @@
             </table>
           </div>
 
-          <h3 style="font-size: 0.95rem; margin-top: 1.25rem;">3. Human Clarification / Message Edit</h3>
+          <h3 style="font-size: 0.95rem; margin-top: 1.15rem;">3. Human Clarification / Message Edit</h3>
           <div class="form-group">
             <textarea class="form-textarea" id="review-edit-text" rows="3">${escapeHtml(order.original_message)}</textarea>
             <button class="btn btn-secondary btn-sm" id="btn-review-reprocess" style="margin-top: 0.5rem;">
@@ -501,7 +547,7 @@
           </div>
 
           <!-- Quality Gate Checklist -->
-          <h3 style="font-size: 0.95rem; margin-top: 1.25rem;">5. Safeguard Gate Checklist</h3>
+          <h3 style="font-size: 0.95rem; margin-top: 1.15rem;">5. Safeguard Gate Checklist</h3>
           <div style="background: var(--color-bg-subtle); padding: 0.85rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--color-border); font-size: 0.84rem;">
             <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 0.35rem;">
               <span>${unresolvedCount === 0 ? '✅' : '❌'}</span>
@@ -518,7 +564,7 @@
           </div>
 
           <!-- Action Gate Buttons -->
-          <div class="actions-row" style="margin-top: 1.25rem;">
+          <div class="actions-row" style="margin-top: 1.15rem;">
             <button class="btn btn-success" id="btn-review-approve" ${!canApprove ? 'disabled' : ''}>
               ✓ Approve Verified Order
             </button>
@@ -608,6 +654,7 @@
       state.catalogueRecords = catData.records || [];
       $('catalogue-count-pill').textContent = `${state.catalogueRecords.length} Loaded SKUs`;
       $('metric-catalogue-count').textContent = state.catalogueRecords.length;
+      $('bar-catalogue-count').textContent = state.catalogueRecords.length;
       renderCatalogueTable();
 
       // 3. Fetch Intake Samples
@@ -635,6 +682,11 @@
     // Category filter
     if (state.evalFilter.category) {
       records = records.filter(r => r.category === state.evalFilter.category);
+    }
+
+    // Language filter
+    if (state.evalFilter.language) {
+      records = records.filter(r => r.language_category === state.evalFilter.language);
     }
 
     // Search filter
@@ -680,23 +732,28 @@
           <td>${escapeHtml(r.language_category)}</td>
           <td>
             ${isLocked ?
-              `<span style="color:var(--color-text-muted); font-style:italic;">🔒 ${escapeHtml(r.input_message)}</span>` :
+              `<span style="color:var(--color-text-muted); font-style:italic;">🔒 [Protected in locked test evaluation]</span>` :
               `<code>${escapeHtml(r.input_message)}</code>`}
           </td>
           <td><span class="meta-pill" style="font-size:0.7rem;">${escapeHtml(r.source_type)}</span></td>
           <td><span class="status-badge pending_review">${escapeHtml(r.annotation_status)}</span></td>
           <td>
-            ${!isLocked ? `
-              <button class="btn btn-secondary btn-sm btn-test-intake" data-message="${escapeHtml(r.input_message)}" data-id="${escapeHtml(r.record_id)}">
-                Test in Intake
+            <div style="display:flex; gap:0.35rem; align-items:center;">
+              <button class="btn btn-secondary btn-sm btn-inspect-record" data-id="${escapeHtml(r.record_id)}">
+                Inspect
               </button>
-            ` : '<span style="font-size:0.75rem; color:var(--color-text-muted);">Protected</span>'}
+              ${!isLocked ? `
+                <button class="btn btn-primary btn-sm btn-test-intake" data-message="${escapeHtml(r.input_message)}" data-id="${escapeHtml(r.record_id)}">
+                  Test
+                </button>
+              ` : '<span style="font-size:0.72rem; color:var(--color-text-muted); font-style:italic;">Ineligible</span>'}
+            </div>
           </td>
         </tr>
       `;
     }).join('');
 
-    // Bind "Test in Intake" buttons
+    // Bind "Test in Intake" buttons (Dev/Val only)
     tbody.querySelectorAll('.btn-test-intake').forEach(btn => {
       btn.addEventListener('click', () => {
         const msg = btn.getAttribute('data-message');
@@ -707,6 +764,93 @@
         showStatus(`Loaded record ${id} into Order Workspace. Click "Process Order via FastAPI" to test.`, 'info');
       });
     });
+
+    // Bind "Inspect" buttons (Opens detail modal)
+    tbody.querySelectorAll('.btn-inspect-record').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const record = state.evalRecords.find(r => r.record_id === id);
+        if (record) openRecordModal(record);
+      });
+    });
+  }
+
+  function openRecordModal(record) {
+    const modal = $('record-detail-modal');
+    const body = $('modal-record-body');
+    const title = $('modal-record-title');
+    if (!modal || !body) return;
+
+    const isLocked = record.split === 'locked_test';
+    const splitBadgeClass = record.split === 'development' ? 'split-dev' : (record.split === 'validation' ? 'split-val' : 'split-locked');
+
+    title.textContent = `Record Details: ${record.record_id}`;
+
+    body.innerHTML = `
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;">
+        <span class="status-badge ${splitBadgeClass}">${escapeHtml(record.split)}</span>
+        <span class="status-badge pending_review">${escapeHtml(record.annotation_status)}</span>
+        <span class="meta-pill">Language: ${escapeHtml(record.language_category)}</span>
+        <span class="meta-pill">Source: ${escapeHtml(record.source_type)}</span>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:0.8rem; font-weight:600; color:var(--color-text-muted); text-transform:uppercase;">Category / Scenario</label>
+        <div style="font-weight:700; font-size:1.05rem; color:var(--color-text-primary); margin-top:0.15rem;">
+          ${escapeHtml(record.category)}
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.25rem;">
+        <label style="font-size:0.8rem; font-weight:600; color:var(--color-text-muted); text-transform:uppercase;">Input Message Text</label>
+        <div style="background:var(--color-bg-subtle); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:0.85rem 1rem; margin-top:0.25rem; font-size:0.92rem;">
+          ${isLocked ?
+            '<span style="color:var(--color-text-muted); font-style:italic;">🔒 [Locked test message — protected in locked-test evaluation to preserve benchmark integrity]</span>' :
+            `<code>${escapeHtml(record.input_message)}</code>`}
+        </div>
+      </div>
+
+      <div style="background:#ffffff; border:1px solid var(--color-border); border-radius:var(--radius-md); padding:0.85rem 1rem; margin-bottom:1.25rem; font-size:0.82rem;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem;">
+          <div>Reviewer Assignment: <strong>${escapeHtml(record.reviewer_status || 'not_assigned')}</strong></div>
+          <div>Ground Truth Privacy: <strong>${isLocked ? 'Strictly Isolated' : 'Candidate Only'}</strong></div>
+          <div>Intake Testing Eligibility: <strong>${isLocked ? 'Ineligible (Prevents Leakage)' : 'Eligible for Intake Test'}</strong></div>
+          <div>Dataset Version: <strong>v2.0-candidate</strong></div>
+        </div>
+      </div>
+
+      ${isLocked ? `
+        <div class="alert-banner warning" style="margin-bottom:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
+          <div>
+            <strong>Locked Benchmark Safeguard:</strong> This record belongs to the frozen locked-test partition. Expected items, labels, and message text are withheld from interactive testing to maintain uncompromised evaluation integrity.
+          </div>
+        </div>
+      ` : `
+        <div class="actions-row">
+          <button class="btn btn-primary" id="btn-modal-load-intake">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Load into Order Workspace
+          </button>
+          <button class="btn btn-secondary" id="btn-modal-close-action">Close</button>
+        </div>
+      `}
+    `;
+
+    modal.style.display = 'flex';
+
+    if (!isLocked) {
+      $('btn-modal-load-intake').addEventListener('click', () => {
+        modal.style.display = 'none';
+        $('customer-message').value = record.input_message;
+        $('char-count').textContent = `${record.input_message.length} / 2000 chars`;
+        switchTab('workspace');
+        showStatus(`Loaded record ${record.record_id} into Order Workspace. Click "Process Order via FastAPI" to test.`, 'info');
+      });
+      $('btn-modal-close-action').addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+    }
   }
 
   function renderCatalogueTable() {
@@ -726,6 +870,11 @@
 
     tbody.innerHTML = records.map(p => {
       const aliases = (p.aliases || '').split('|').filter(Boolean);
+      const unitsPerBox = p.units_per_box ? escapeHtml(p.units_per_box) : '<span style="color:var(--color-text-muted);">Not defined</span>';
+      const priceDisplay = p.price && !isNaN(Number(p.price)) ?
+        `<strong>${formatCurrency(p.price)}</strong>` :
+        '<span class="status-badge NEEDS_CLARIFICATION">Not configured (Price Missing)</span>';
+
       return `
         <tr>
           <td><span class="sku-pill">${escapeHtml(p.sku)}</span></td>
@@ -733,9 +882,9 @@
           <td>${aliases.map(a => `<span class="meta-pill" style="font-size:0.72rem; margin:0.1rem;">${escapeHtml(a)}</span>`).join(' ')}</td>
           <td>${escapeHtml(p.pack_size || '—')}</td>
           <td><strong>${escapeHtml(p.sellable_unit || '—')}</strong></td>
-          <td>${escapeHtml(p.units_per_box || '—')}</td>
+          <td>${unitsPerBox}</td>
           <td><code>${escapeHtml(p.supported_conversions || '—')}</code></td>
-          <td><strong>${formatCurrency(p.price)}</strong></td>
+          <td>${priceDisplay}</td>
           <td><span class="meta-pill" style="font-size:0.7rem;">${escapeHtml(p.dataset_source)}</span></td>
         </tr>
       `;
@@ -797,6 +946,7 @@
       const data = await api('/api/metrics');
       state.metricsData = data;
 
+      // Update KPI Cards
       $('metric-orders-processed').textContent = data.orders_processed ?? 0;
       $('metric-verified-orders').textContent = data.verified_orders ?? 0;
       $('metric-clarification-orders').textContent = data.needs_clarification ?? 0;
@@ -807,6 +957,13 @@
       $('metric-catalogue-count').textContent = data.catalogue_records_loaded ?? 6;
       $('metric-eval-count').textContent = state.evalRecords.length || 60;
       $('metric-benchmark-accuracy').textContent = data.benchmark_accuracy || 'Not available';
+
+      // Update Session Bar
+      $('bar-orders-processed').textContent = data.orders_processed ?? 0;
+      $('bar-verified-orders').textContent = data.verified_orders ?? 0;
+      $('bar-clarification-orders').textContent = data.needs_clarification ?? 0;
+      $('bar-approved-orders').textContent = data.approved_orders ?? 0;
+      $('bar-catalogue-count').textContent = data.catalogue_records_loaded ?? 6;
     } catch (err) {
       console.error('Failed to refresh metrics:', err);
     }
@@ -839,7 +996,6 @@
   // -------------------------------------------------------------
   async function renderAuditView() {
     try {
-      // Fetch latest orders list from backend
       const ordersRes = await api('/api/orders');
       if (ordersRes && Array.isArray(ordersRes.records)) {
         state.orders = ordersRes.records;
@@ -852,7 +1008,7 @@
     if (!tbody) return;
 
     if (!state.orders.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No orders processed in this session yet. Run an order in the Workspace!</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No orders processed in this session yet. Run an order in the Workspace!</td></tr>';
       $('audit-trace-container').innerHTML = '<p class="card-subtitle">No trace available.</p>';
       return;
     }
@@ -861,7 +1017,8 @@
       <tr style="${state.selectedOrder && state.selectedOrder.id === o.id ? 'background: #f1f8f4;' : ''}">
         <td><span class="sku-pill">${escapeHtml(o.id.slice(0, 8))}…</span></td>
         <td>${formatTime(o.created_at)}</td>
-        <td><code>${escapeHtml(o.original_message.slice(0, 35))}${o.original_message.length > 35 ? '…' : ''}</code></td>
+        <td><code>${escapeHtml(o.original_message.slice(0, 30))}${o.original_message.length > 30 ? '…' : ''}</code></td>
+        <td><span class="meta-pill" style="font-size:0.72rem;">${escapeHtml(o.parser?.method || 'rules')}</span></td>
         <td><span class="status-badge ${o.state}">${o.state}</span></td>
         <td><strong>${o.lines.length}</strong></td>
         <td>${o.processing_duration_ms} ms</td>
@@ -942,6 +1099,21 @@
       if (id) loadSampleById(id);
     });
 
+    // Extraction Method Change Warning/Hint
+    $('extraction-method').addEventListener('change', (e) => {
+      const val = e.target.value;
+      const callout = $('llm-config-text');
+      if (val === 'llm') {
+        if (state.healthData && state.healthData.llm_configured) {
+          callout.textContent = `Live LLM selected: ${state.healthData.llm_model}. Requests will use OpenRouter chat completions.`;
+        } else {
+          callout.textContent = `LLM adapter is unconfigured in current environment. Safe automatic fallback to rules parser will occur.`;
+        }
+      } else {
+        callout.textContent = `Deterministic rules-based parser active. Fast, local, offline-safe execution.`;
+      }
+    });
+
     // Quick Test Presets
     const presets = {
       clear: 'Send 2 box 500ml oil and 5 dozen soap.',
@@ -983,6 +1155,29 @@
       });
     }
 
+    // Modal Close Button
+    const btnCloseModal = $('btn-close-modal');
+    if (btnCloseModal) {
+      btnCloseModal.addEventListener('click', () => {
+        $('record-detail-modal').style.display = 'none';
+      });
+    }
+
+    // Close modal on escape key or backdrop click
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const m = $('record-detail-modal');
+        if (m && m.style.display !== 'none') m.style.display = 'none';
+      }
+    });
+
+    const modalBackdrop = $('record-detail-modal');
+    if (modalBackdrop) {
+      modalBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalBackdrop) modalBackdrop.style.display = 'none';
+      });
+    }
+
     // Process Order Button
     const btnProcess = $('btn-process');
     btnProcess.addEventListener('click', async () => {
@@ -1000,14 +1195,16 @@
 
       try {
         const sourceRecordId = $('records-select').value || null;
+        const extractionMethod = $('extraction-method').value || 'rules';
         const result = await api('/api/orders/process', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, source_record_id: sourceRecordId, extraction_method: $('extraction-method').value })
+          body: JSON.stringify({ message, source_record_id: sourceRecordId, extraction_method: extractionMethod })
         });
 
         renderOrderResult(result);
-        showStatus(`Order processed in ${result.processing_duration_ms} ms with status: ${result.state}`, result.state === 'VERIFIED' ? 'success' : 'warning');
+        const statusType = result.state === 'VERIFIED' ? 'success' : 'warning';
+        showStatus(`Order processed in ${result.processing_duration_ms} ms with state: ${result.state}`, statusType);
         refreshMetrics();
       } catch (err) {
         showStatus(`Pipeline failure: ${err.message}`, 'danger', 6000);
@@ -1055,6 +1252,12 @@
       renderEvalTable();
     });
 
+    $('eval-language-select').addEventListener('change', (e) => {
+      state.evalFilter.language = e.target.value;
+      state.evalFilter.page = 1;
+      renderEvalTable();
+    });
+
     document.querySelectorAll('#split-filter-pills .filter-pill').forEach(pill => {
       pill.addEventListener('click', () => {
         document.querySelectorAll('#split-filter-pills .filter-pill').forEach(p => p.classList.remove('active'));
@@ -1087,6 +1290,7 @@
   // App Startup
   async function init() {
     setupEventListeners();
+    await checkHealthAndLLM();
     await loadDatasetExplorer();
     await refreshMetrics();
     await refreshEvaluation();
