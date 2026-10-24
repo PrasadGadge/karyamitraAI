@@ -29,3 +29,25 @@ def test_process_and_approval_safeguards():
 def test_invalid_request_and_missing_order_have_honest_errors():
     assert client.post("/api/orders/process", json={"message": ""}).status_code == 422
     assert client.get("/api/orders/not-an-order").status_code == 404
+
+
+def test_orders_list_endpoint_tracks_processed_orders():
+    res = client.get("/api/orders").json()
+    assert res["count"] == 0
+    client.post("/api/orders/process", json={"message": "Send 1 bottle oil."})
+    res_after = client.get("/api/orders").json()
+    assert res_after["count"] == 1
+    assert len(res_after["records"]) == 1
+
+
+def test_evaluation_records_endpoint_does_not_leak_locked_ground_truth():
+    res = client.get("/api/evaluation/records")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["total"] == 60
+    assert data["split_counts"]["development"] == 36
+    assert data["split_counts"]["validation"] == 12
+    assert data["split_counts"]["locked_test"] == 12
+    # Ensure locked ground truth is never exposed
+    assert "expected_items" not in res.text.lower()
+    assert "moon juice" not in res.text.lower()

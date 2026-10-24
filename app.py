@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from catalogue import Catalogue
+from evaluation import load_evaluation
 from evaluation import run as run_evaluation
 from evaluation import summary as evaluation_summary
 from orders import OrderService
@@ -63,6 +64,11 @@ def get_dataset():
 @app.post("/api/orders/process")
 def process_order(request: ProcessRequest):
     return service.process(request.message, request.source_record_id)
+
+
+@app.get("/api/orders")
+def get_orders():
+    return {"records": list(service.orders.values()), "count": len(service.orders)}
 
 
 @app.get("/api/orders/{order_id}")
@@ -126,3 +132,45 @@ def get_evaluation_summary():
     except ValueError as exc:
         raise HTTPException(500, f"Evaluation dataset integrity error: {exc}") from exc
     return {"dataset": readiness, "baseline": {"status": baseline["status"], "eligible_records": baseline["eligible"], "excluded_unreviewed": baseline["raw_counts"]["excluded_unreviewed"], "metrics": baseline["metrics"], "locked_ground_truth_exposed": False}}
+
+
+@app.get("/api/evaluation/records")
+def get_evaluation_records():
+    """Safe evaluation dataset records for judge inspection.
+    Locked-test expected items and ground-truth answers are strictly excluded.
+    """
+    candidate, locked, manifest = load_evaluation()
+    safe_records = []
+    for r in candidate:
+        safe_records.append({
+            "record_id": r["record_id"],
+            "split": r["split"],
+            "category": r["category"],
+            "language_category": r["language_category"],
+            "source_type": r["source_type"],
+            "input_message": r["input_message"],
+            "annotation_status": r["annotation_status"],
+            "reviewer_status": r.get("reviewer_status", "not_assigned"),
+        })
+    for r in locked:
+        safe_records.append({
+            "record_id": r["record_id"],
+            "split": r["split"],
+            "category": r["category"],
+            "language_category": r["language_category"],
+            "source_type": r["source_type"],
+            "input_message": "[Locked test message — protected in locked-test evaluation]",
+            "annotation_status": r["annotation_status"],
+            "reviewer_status": r.get("reviewer_status", "not_assigned"),
+        })
+    return {
+        "dataset_version": manifest["dataset_version"],
+        "records": safe_records,
+        "total": len(safe_records),
+        "split_counts": {
+            "development": sum(1 for r in safe_records if r["split"] == "development"),
+            "validation": sum(1 for r in safe_records if r["split"] == "validation"),
+            "locked_test": sum(1 for r in safe_records if r["split"] == "locked_test"),
+        },
+        "locked_ground_truth_exposed": False,
+    }
