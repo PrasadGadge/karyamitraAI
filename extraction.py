@@ -6,14 +6,15 @@ from dataclasses import asdict, dataclass
 
 PARSER_METHOD = "rules"
 PARSER_VERSION = "1.1"
-_UNITS = {"box": "box", "boxes": "box", "dozen": "dozen", "bottle": "bottle", "bottles": "bottle", "bar": "bar", "bars": "bar", "piece": "piece", "pieces": "piece", "pc": "piece", "pcs": "piece"}
+_UNITS = {"box": "box", "boxes": "box", "dozen": "dozen", "bottle": "bottle", "bottles": "bottle", "piece": "piece", "pieces": "piece", "pc": "piece", "pcs": "piece"}
 _LEADING = re.compile(r"^(?:please\s+|send\s+|bhau\s*,?\s*)", re.I)
 _TRAILING = re.compile(r"\s+(?:pathav|please|thanks?)\.?\s*$", re.I)
 _ITEM = re.compile(r"^(?:(?P<quantity>\d+)\s+)?(?P<product>.+?)$", re.I)
-_UNIT_PREFIX = re.compile(r"^(?P<unit>box(?:es)?|dozen|bottles?|bars?|pieces?|pcs?)\s+(?P<product>.+)$", re.I)
+_UNIT_PREFIX = re.compile(r"^(?P<unit>box(?:es)?|dozen|bottles?|pieces?|pcs?)\s+(?P<product>.+)$", re.I)
 # Pattern to find product mentions: quantity + unit + product
+# Note: "bar" and "bars" are excluded from unit matching to allow them as product descriptors
 _PRODUCT_PATTERN = re.compile(
-    r"(?P<quantity>\d+)\s+(?P<unit>box(?:es)?|dozen|bottles?|bars?|pieces?|pcs?)(?:\s+of\s+)?(?P<product>[^.!?]+?)(?=\s*(?:,|\sand\b|\bani\b|\bpathav\b)|\.|!|\?$)",
+    r"(?P<quantity>\d+)\s+(?P<unit>box(?:es)?|dozen|bottles?|pieces?|pcs?)(?:\s+of\s+)?(?P<product>[^.!?]+?)(?=\s*(?:,|\sand\b|\bani\b|\bpathav\b)|\.|!|\?$)",
     re.I
 )
 # Fallback pattern: quantity + product (unit might be implicit)

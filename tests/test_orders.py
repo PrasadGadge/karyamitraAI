@@ -37,9 +37,31 @@ def test_rejected_order_cannot_export(service):
 
 def test_test_a_detailed_order_full_processing(service):
     """Test A — Detailed order with instructions: extraction and verification."""
-    message = "Bhau, please prepare an order for my shop. I need 4 boxes of 500ml oil and 8 dozen soap. Check the product names and prices from the catalogue, convert the quantities into individual units, and show me the item-wise totals and grand total. If any product is unclear, ask me before proceeding. Keep the order pending until I review and approve it."
+    message = "Bhau, please prepare an order for my shop. I need 4 boxes of 500ml oil and 8 dozen soap bars. Check the product names and prices from the catalogue, convert the quantities into individual units, and show me the item-wise totals and grand total. If any product is unclear, ask me before proceeding. Keep the order pending until I review and approve it."
     order = service.process(message)
     assert len(order["lines"]) == 2, f"Expected exactly 2 lines, got {len(order['lines'])}"
+    assert order["lines"][0]["product_text"] == "500ml oil"
+    assert order["lines"][0]["quantity"] == 4
+    assert order["lines"][0]["requested_unit"] == "box"
+    assert order["lines"][1]["product_text"] == "soap bars"
+    assert order["lines"][1]["quantity"] == 8
+    assert order["lines"][1]["requested_unit"] == "dozen"
+    # Both should match catalogue and be verified
+    assert order["lines"][0]["verified"] is True
+    assert order["lines"][1]["verified"] is True
+    assert order["state"] == "VERIFIED"
+    # Verify correct conversions and totals
+    assert order["lines"][0]["converted_quantity"] == 48  # 4 boxes * 12
+    assert order["lines"][0]["line_total"] == 3960.0  # 48 * 82.50
+    assert order["lines"][1]["converted_quantity"] == 96  # 8 dozen * 12
+    assert order["lines"][1]["line_total"] == 1728.0  # 96 * 18.00
+
+
+def test_simple_soap_order(service):
+    """Test simple order: 'Send 4 boxes 500ml oil and 8 dozen soap.'"""
+    message = "Send 4 boxes 500ml oil and 8 dozen soap."
+    order = service.process(message)
+    assert len(order["lines"]) == 2
     assert order["lines"][0]["product_text"] == "500ml oil"
     assert order["lines"][0]["quantity"] == 4
     assert order["lines"][0]["requested_unit"] == "box"
@@ -54,13 +76,13 @@ def test_test_a_detailed_order_full_processing(service):
 
 def test_test_c_delivery_context_full_processing(service):
     """Test C — Order with delivery context: extraction and verification."""
-    message = "Please prepare our shop order for tomorrow. We need 4 boxes of 500ml oil and 10 dozen soap. Check catalogue prices and show the total before dispatch."
+    message = "Please prepare our shop order for tomorrow. We need 4 boxes of 500ml oil and 10 dozen soap bars. Check catalogue prices and show the total before dispatch."
     order = service.process(message)
     assert len(order["lines"]) == 2
     assert order["lines"][0]["product_text"] == "500ml oil"
     assert order["lines"][0]["quantity"] == 4
     assert order["lines"][0]["requested_unit"] == "box"
-    assert order["lines"][1]["product_text"] == "soap"
+    assert order["lines"][1]["product_text"] == "soap bars"
     assert order["lines"][1]["quantity"] == 10
     assert order["lines"][1]["requested_unit"] == "dozen"
     # Both should match catalogue and be verified

@@ -32,13 +32,13 @@ def test_malformed_input_is_rejected(message):
 
 def test_test_a_detailed_order_with_instructions():
     """Test A — Detailed order with introductory text and processing instructions."""
-    message = "Bhau, please prepare an order for my shop. I need 4 boxes of 500ml oil and 8 dozen soap. Check the product names and prices from the catalogue, convert the quantities into individual units, and show me the item-wise totals and grand total. If any product is unclear, ask me before proceeding. Keep the order pending until I review and approve it."
+    message = "Bhau, please prepare an order for my shop. I need 4 boxes of 500ml oil and 8 dozen soap bars. Check the product names and prices from the catalogue, convert the quantities into individual units, and show me the item-wise totals and grand total. If any product is unclear, ask me before proceeding. Keep the order pending until I review and approve it."
     result = extract(message)
     assert len(result["lines"]) == 2, f"Expected exactly 2 product lines, got {len(result['lines'])}"
     assert result["lines"][0]["product_text"] == "500ml oil"
     assert result["lines"][0]["quantity"] == 4
     assert result["lines"][0]["unit"] == "box"
-    assert result["lines"][1]["product_text"] == "soap"
+    assert result["lines"][1]["product_text"] == "soap bars"
     assert result["lines"][1]["quantity"] == 8
     assert result["lines"][1]["unit"] == "dozen"
 
@@ -54,6 +54,19 @@ def test_test_b_short_order():
     assert result["lines"][1]["product_text"] == "soap"
     assert result["lines"][1]["quantity"] == 8
     assert result["lines"][1]["unit"] == "dozen"
+
+
+def test_soap_bar_variations():
+    """Test that 'soap bar' and 'soap bars' are extracted correctly."""
+    message1 = "Send 4 boxes 500ml oil and 8 dozen soap bars."
+    result1 = extract(message1)
+    assert len(result1["lines"]) == 2
+    assert result1["lines"][1]["product_text"] == "soap bars"
+    
+    message2 = "Send 4 boxes of 500ml oil and 8 dozen soap bar."
+    result2 = extract(message2)
+    assert len(result2["lines"]) == 2
+    assert result2["lines"][1]["product_text"] == "soap bar"
 
 
 def test_test_c_delivery_context():
