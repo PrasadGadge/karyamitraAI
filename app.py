@@ -21,6 +21,8 @@ ROOT = Path(__file__).parent
 catalogue = Catalogue(ROOT / "data" / "products.csv")
 service = OrderService(catalogue)
 dataset = json.loads((ROOT / "data" / "sample_orders.json").read_text(encoding="utf-8"))
+_, _locked_eval_records, _ = load_evaluation()
+LOCKED_RECORD_IDS = {r["record_id"] for r in _locked_eval_records}
 
 app = FastAPI(title="KaryaMitra AI", version="0.1.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
@@ -75,6 +77,11 @@ def get_dataset():
 
 @app.post("/api/orders/process")
 def process_order(request: ProcessRequest):
+    if request.source_record_id and request.source_record_id in LOCKED_RECORD_IDS:
+        raise HTTPException(
+            status_code=400,
+            detail="Locked-test evaluation records are protected to preserve benchmark integrity and cannot be processed in the normal intake workflow.",
+        )
     return service.process(request.message, request.source_record_id, request.extraction_method)
 
 
@@ -143,7 +150,31 @@ def get_evaluation_summary():
         baseline = run_evaluation("locked_test")
     except ValueError as exc:
         raise HTTPException(500, f"Evaluation dataset integrity error: {exc}") from exc
-    return {"dataset": readiness, "baseline": {"status": baseline["status"], "eligible_records": baseline["eligible"], "excluded_unreviewed": baseline["raw_counts"]["excluded_unreviewed"], "metrics": baseline["metrics"], "locked_ground_truth_exposed": False}}
+    return {
+        "dataset": {
+            **readiness,
+            "known_limitations": [
+                "100% synthetic corpus (60/60 fictional; 0 real commercial distributor messages)",
+                "English-dominated coverage (55/60, 91.7%); regional coverage limited to 5 Hinglish/Marathi patterns",
+                "All 60 annotations pending independent human review (0% independently reviewed)",
+                "Baseline accuracy honestly not evaluated while no eligible reviewed ground truth exists",
+                "In-memory prototype; orders and telemetry reset on server restart",
+            ],
+            "missing_attributes": [
+                "Real commercial customer intake messages",
+                "Independently adjudicated ground-truth labels",
+                "Generic regional vernacular/multilingual NLP models",
+                "Commercial distributor ROI & production ERP deployment",
+            ],
+        },
+        "baseline": {
+            "status": baseline["status"],
+            "eligible_records": baseline["eligible"],
+            "excluded_unreviewed": baseline["raw_counts"]["excluded_unreviewed"],
+            "metrics": baseline["metrics"],
+            "locked_ground_truth_exposed": False,
+        },
+    }
 
 
 @app.get("/api/evaluation/records")
