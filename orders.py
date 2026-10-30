@@ -7,9 +7,9 @@ from datetime import datetime, timezone
 from typing import Protocol
 
 from catalogue import Catalogue
-from extraction import extract
+from extraction import PARSER_METHOD, PARSER_VERSION, extract
 from llm_extraction import LLMExtractionError, OpenRouterExtractionAdapter
-from repository import InventoryRepository, OrderRepository
+from repository import InventoryReservationError, InventoryRepository, OrderRepository
 
 STATES = {"DRAFT", "NEEDS_CLARIFICATION", "VERIFIED", "APPROVED", "REJECTED"}
 
@@ -49,12 +49,16 @@ class OrderService:
             trace.append(self._event("catalogue_lookup_completed"))
             trace.append(self._event("validation_executed"))
             unresolved = [line for line in lines if not line["verified"]]
-            state = "NEEDS_CLARIFICATION" if unresolved else "VERIFIED"
-            if unresolved:
-                trace.append(self._event("unresolved_conditions_identified", f"{len(unresolved)} line(s)"))
+            unrecognised = parsed["unrecognised_text"]
+            state = "NEEDS_CLARIFICATION" if unresolved or unrecognised else "VERIFIED"
+            if unresolved or unrecognised:
+                detail = f"{len(unresolved)} unresolved line(s)"
+                if unrecognised:
+                    detail += f"; {len(unrecognised)} unparsed request segment(s)"
+                trace.append(self._event("unresolved_conditions_identified", detail))
             error = None
         except ValueError as exc:
-            parsed, lines, unresolved, error = {"method": "rules", "version": "1.0", "lines": [], "unrecognised_text": [message]}, [], [], str(exc)
+            parsed, lines, unresolved, error = {"method": PARSER_METHOD, "version": PARSER_VERSION, "lines": [], "unrecognised_text": [message]}, [], [], str(exc)
             state = "DRAFT"
             trace.append(self._event("processing_error", error))
         duration = round((time.perf_counter() - started) * 1000, 3)
@@ -69,92 +73,40 @@ class OrderService:
         order = self._require(order_id)
         if order["state"] != "VERIFIED":
             raise ValueError("Only a verified order with no unresolved mandatory fields can be approved.")
-        
+
         # Check inventory availability and reserve stock (if enabled)
         if self.enable_inventory:
-            insufficient_items = []
-            missing_inventory = []
-            
-            # First, check inventory for all lines BEFORE persisting the order
+            requirements: list[tuple[str, int]] = []
             for line in order["lines"]:
                 if line["verified"] and line.get("sku") and line.get("converted_quantity"):
-                    sku = line["sku"]
-                    quantity = line["converted_quantity"]
-                    
-                    # Check if inventory record exists
-                    inv = InventoryRepository.get_inventory(sku)
-                    if not inv:
-                        missing_inventory.append({
-                            "sku": sku,
-                            "product_name": line.get("product_name", sku),
-                            "error": "Inventory record not found"
-                        })
-                        continue
-                    
-                    # Check if sufficient stock
-                    available = inv["available_quantity"]
-                    if available < quantity:
-                        insufficient_items.append({
-                            "sku": sku,
-                            "product_name": line.get("product_name", sku),
-                            "requested": quantity,
-                            "available": available
-                        })
-            
-            if missing_inventory:
-                raise ValueError(f"Inventory record missing for approval: {missing_inventory}. Initialize stock through opening-stock workflow.")
-            
-            if insufficient_items:
-                raise ValueError(f"Insufficient inventory for approval: {insufficient_items}")
-            
-            # Now persist the order (all inventory checks passed)
+                    requirements.append((line["sku"], line["converted_quantity"]))
             try:
-                OrderRepository.create_order(order)
-            except Exception:
-                raise ValueError("Failed to persist order after inventory check")
-            
-            # Now reserve stock atomically
-            for line in order["lines"]:
-                if line["verified"] and line.get("sku") and line.get("converted_quantity"):
-                    sku = line["sku"]
-                    quantity = line["converted_quantity"]
-                    reserved = InventoryRepository.reserve_stock(order_id, sku, quantity)
-                    if not reserved:
-                        # This shouldn't happen since we checked above, but be defensive
-                        InventoryRepository.release_reservation(order_id)
-                        OrderRepository.update_order_state(order_id, "VERIFIED")
-                        raise ValueError(f"Stock became unavailable during reservation for {sku}")
-            
-            # Update order state to APPROVED
-            try:
-                OrderRepository.update_order_state(order_id, "APPROVED")
-            except Exception:
-                # If state update fails, release reservations
-                InventoryRepository.release_reservation(order_id)
-                raise
-        
+                OrderRepository.create_approved_order_with_reservations(order, requirements)
+            except InventoryReservationError as exc:
+                raise ValueError(str(exc)) from None
+
         order["state"] = "APPROVED"
         order["trace"].append(self._event("approved", "explicit human approval" + (" with stock reservation" if self.enable_inventory else "")))
-        
+
         return order
 
     def reject(self, order_id: str) -> dict:
         order = self._require(order_id)
         if order["state"] == "APPROVED":
             raise ValueError("An approved order cannot be rejected in this in-memory prototype.")
-        
+
         # Release any stock reservations (if inventory enabled)
         if self.enable_inventory:
             InventoryRepository.release_reservation(order_id)
-            
+
             # Persist to database
             if order_id not in self.orders:
                 OrderRepository.create_order(order)
             OrderRepository.update_order_state(order_id, "REJECTED")
-        
+
         order["state"] = "REJECTED"
         order["trace"].append(self._event("rejected", "explicit human rejection"))
-        
+
         return order
 
     def correct(self, order_id: str, message: str) -> dict:

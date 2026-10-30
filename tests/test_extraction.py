@@ -62,7 +62,7 @@ def test_soap_bar_variations():
     result1 = extract(message1)
     assert len(result1["lines"]) == 2
     assert result1["lines"][1]["product_text"] == "soap bars"
-    
+
     message2 = "Send 4 boxes of 500ml oil and 8 dozen soap bar."
     result2 = extract(message2)
     assert len(result2["lines"]) == 2
@@ -106,3 +106,48 @@ def test_test_e_unknown_product():
     assert result["lines"][1]["product_text"] == "mystery drink"
     assert result["lines"][1]["quantity"] == 5
     assert result["lines"][1]["unit"] == "dozen"
+
+
+def test_case_a_preserves_an_implicit_unit_line_for_clarification():
+    """A recognized explicit-unit line must not hide a later implicit-unit line."""
+    result = extract("I need 5 bottles of 500ml oil and 10 soap bars.")
+
+    assert result["lines"] == [
+        {"product_text": "500ml oil", "quantity": 5, "unit": "bottle", "source_text": "5 bottles of 500ml oil"},
+        {"product_text": "soap bars", "quantity": 10, "unit": None, "source_text": "10 soap bars"},
+    ]
+
+
+def test_case_b_preserves_each_catalogue_defined_packaged_line():
+    result = extract("Send 2 boxes of 500ml oil and 5 dozen soap.")
+
+    assert [(line["product_text"], line["quantity"], line["unit"]) for line in result["lines"]] == [
+        ("500ml oil", 2, "box"),
+        ("soap", 5, "dozen"),
+    ]
+
+
+def test_commas_conjunctions_prefixes_and_repeated_mentions_are_not_lost():
+    result = extract("  We require 1 bottle oil, 2 bottles oil and 3 dozen SOAP.  ")
+
+    assert [(line["product_text"], line["quantity"], line["unit"]) for line in result["lines"]] == [
+        ("oil", 1, "bottle"),
+        ("oil", 2, "bottle"),
+        ("SOAP", 3, "dozen"),
+    ]
+
+
+def test_incomplete_packaged_request_is_explicitly_unrecognised():
+    result = extract("Please send 2 boxes.")
+
+    assert result["lines"] == []
+    assert result["unrecognised_text"] == ["2 boxes"]
+
+
+def test_incomplete_pack_does_not_consume_a_later_valid_request():
+    result = extract("Send 2 boxes and 5 dozen soap.")
+
+    assert result["unrecognised_text"] == ["2 boxes"]
+    assert result["lines"] == [
+        {"product_text": "soap", "quantity": 5, "unit": "dozen", "source_text": "5 dozen soap"},
+    ]

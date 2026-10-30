@@ -3,9 +3,12 @@ from __future__ import annotations
 import csv
 import io
 import json
+import os
 from decimal import Decimal
 from pathlib import Path
 from typing import Literal
+
+from database import get_db, get_schema_version
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse, JSONResponse
@@ -33,7 +36,9 @@ _, _locked_eval_records, _ = load_evaluation()
 LOCKED_RECORD_IDS = {r["record_id"] for r in _locked_eval_records}
 
 # Initialize database in demo mode for demonstration
-init_db(ROOT / "data" / "products.csv", demo_mode=True)
+# verify_live.py will initialize the temporary database before starting the server
+if not os.getenv("KARYAMITRA_DB_PATH"):
+    init_db(ROOT / "data" / "products.csv", demo_mode=True)
 
 app = FastAPI(title="KaryaMitra AI", version="0.2.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
@@ -66,6 +71,15 @@ def health():
     llm_adapter = getattr(service, "llm_adapter", None)
     is_avail = bool(getattr(llm_adapter, "is_available", False))
     model_name = getattr(llm_adapter, "model", "") or None
+
+    # Get schema version
+    schema_version = 0
+    try:
+        with get_db() as conn:
+            schema_version = get_schema_version(conn)
+    except Exception:
+        schema_version = 0
+
     return {
         "status": "ok",
         "catalogue_records": len(catalogue.products),
@@ -73,6 +87,7 @@ def health():
         "persistence": "SQLite database; operational data persists across restarts",
         "llm_configured": is_avail,
         "llm_model": model_name,
+        "schema_version": schema_version,
     }
 
 
@@ -468,28 +483,28 @@ def dashboard_summary():
     """Get dashboard summary metrics."""
     inventory = InventoryRepository.list_inventory()
     shipments = ShipmentRepository.list_shipments()
-    
+
     low_stock = [i for i in inventory if i["available_quantity"] <= i["low_stock_threshold"]]
     in_transit = [s for s in shipments if s["status"] == "in_transit"]
-    
+
     # Check if demo mode (synthetic stock) is active
     with get_db() as conn:
         cursor = conn.execute("""
-            SELECT COUNT(*) as count FROM stock_movements 
+            SELECT COUNT(*) as count FROM stock_movements
             WHERE movement_type='opening_stock' AND reason LIKE '%demo%'
         """)
         demo_mode = cursor.fetchone()["count"] > 0
-    
+
     return {
         "low_stock_products": len(low_stock),
         "in_transit_shipments": len(in_transit),
         "demo_mode": demo_mode
     }
-    
+
     low_stock_count = sum(1 for inv in inventory if inv["available_quantity"] <= inv["low_stock_threshold"])
     pending_dispatch = sum(1 for s in shipments if s["status"] in ["planned", "ready"])
     in_transit = sum(1 for s in shipments if s["status"] == "in_transit")
-    
+
     # Check for overdue shipments
     from datetime import datetime
     now = datetime.now(timezone.utc)
@@ -502,7 +517,7 @@ def dashboard_summary():
                     overdue += 1
             except:
                 pass
-    
+
     return {
         "low_stock_products": low_stock_count,
         "pending_dispatches": pending_dispatch,

@@ -130,6 +130,42 @@ def test_test_e_unknown_product_blocks_approval(service):
         service.approve(order["id"])
 
 
+def test_case_a_keeps_every_requested_line_and_blocks_implicit_unit_approval(service):
+    order = service.process("I need 5 bottles of 500ml oil and 10 soap bars.")
+
+    assert [(line["sku"], line["quantity"], line["requested_unit"]) for line in order["lines"]] == [
+        ("SYN-OIL-500", 5, "bottle"),
+        ("SYN-SOAP-100", 10, None),
+    ]
+    assert order["lines"][0]["line_total"] == 412.5
+    assert order["lines"][1]["verified"] is False
+    assert any("Unit is required" in finding for finding in order["lines"][1]["findings"])
+    assert order["state"] == "NEEDS_CLARIFICATION"
+    with pytest.raises(ValueError, match="Only a verified order"):
+        service.approve(order["id"])
+
+
+def test_case_b_uses_only_catalogue_defined_conversions_and_prices(service):
+    order = service.process("Send 2 boxes of 500ml oil and 5 dozen soap.")
+
+    assert order["state"] == "VERIFIED"
+    assert [(line["sku"], line["converted_quantity"], line["line_total"]) for line in order["lines"]] == [
+        ("SYN-OIL-500", 24, 1980.0),
+        ("SYN-SOAP-100", 60, 1080.0),
+    ]
+    assert sum(line["line_total"] for line in order["lines"]) == 3060.0
+
+
+def test_incomplete_packaging_request_blocks_approval_without_a_silent_drop(service):
+    order = service.process("Please send 2 boxes.")
+
+    assert order["lines"] == []
+    assert order["unrecognised_text"] == ["2 boxes"]
+    assert order["state"] == "NEEDS_CLARIFICATION"
+    with pytest.raises(ValueError, match="Only a verified order"):
+        service.approve(order["id"])
+
+
 def test_llm_fallback_to_rules_when_unconfigured(service):
     """Test that LLM request safely falls back to rules when unconfigured."""
     message = "Send 1 bottle oil."

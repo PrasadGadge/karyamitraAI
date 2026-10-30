@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from catalogue import Catalogue
+from extraction import PARSER_VERSION
 from orders import OrderService
 
 EVALUATION_DIR = Path(__file__).parent / "data" / "evaluation"
@@ -110,7 +111,7 @@ def evaluate(records: list[dict], catalogue: Catalogue) -> dict:
         counts["critical_validation_errors"] += int(order["state"] == "VERIFIED" and record["expected_validation_outcome"] != "VERIFIED")
     def rate(value: int, denominator: int):
         return None if not denominator else {"count": value, "denominator": denominator, "percent": round(value * 100 / denominator, 2)}
-    return {"run_at": datetime.now(timezone.utc).isoformat(), "parser": {"method": "rules", "version": "1.0"}, "eligible": len(eligible), "excluded_unreviewed_record_ids": excluded, "metrics": {"exact_sku": rate(counts["sku_exact"], metric_lines), "exact_quantity": rate(counts["quantity_exact"], metric_lines), "exact_unit": rate(counts["unit_exact"], metric_lines), "complete_order": rate(counts["complete_order_exact"], len(eligible)), "correctly_unresolved": rate(counts["correctly_unresolved"], len(eligible)), "unknown_product_handling": rate(counts["unknown_handled"], len(eligible)), "critical_validation_errors": rate(counts["critical_validation_errors"], len(eligible))}, "raw_counts": dict(counts), "status": "Not evaluated" if not eligible else "Evaluation computed only on reviewed/adjudicated records"}
+    return {"run_at": datetime.now(timezone.utc).isoformat(), "parser": {"method": "rules", "version": PARSER_VERSION}, "eligible": len(eligible), "excluded_unreviewed_record_ids": excluded, "metrics": {"exact_sku": rate(counts["sku_exact"], metric_lines), "exact_quantity": rate(counts["quantity_exact"], metric_lines), "exact_unit": rate(counts["unit_exact"], metric_lines), "complete_order": rate(counts["complete_order_exact"], len(eligible)), "correctly_unresolved": rate(counts["correctly_unresolved"], len(eligible)), "unknown_product_handling": rate(counts["unknown_handled"], len(eligible)), "critical_validation_errors": rate(counts["critical_validation_errors"], len(eligible))}, "raw_counts": dict(counts), "status": "Not evaluated" if not eligible else "Evaluation computed only on reviewed/adjudicated records"}
 
 
 def run(split: str = "locked_test") -> dict:

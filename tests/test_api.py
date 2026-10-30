@@ -35,6 +35,15 @@ def test_invalid_request_and_missing_order_have_honest_errors():
     assert client.get("/api/orders/not-an-order").status_code == 404
 
 
+def test_incomplete_packaging_is_visible_to_review_and_cannot_be_approved():
+    order = client.post("/api/orders/process", json={"message": "Please send 2 boxes."}).json()
+
+    assert order["state"] == "NEEDS_CLARIFICATION"
+    assert order["lines"] == []
+    assert order["unrecognised_text"] == ["2 boxes"]
+    assert client.post(f"/api/orders/{order['id']}/approve").status_code == 409
+
+
 def test_orders_list_endpoint_tracks_processed_orders():
     res = client.get("/api/orders").json()
     assert res["count"] == 0

@@ -1,19 +1,22 @@
+# Python environments and caches
 .venv/
+venv/
 __pycache__/
 .pytest_cache/
-.env
 *.py[cod]
+
+# Local secrets and databases
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Local outputs
 exports/
 evaluation_runs/
 data/review_artifacts/
 *.log
-*.db
-*.db-shm
-*.db-wal
-
-
-# Local-only files
-.env
-*.db
-__pycache__/
-.pytest_cache/

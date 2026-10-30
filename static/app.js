@@ -297,10 +297,11 @@
     const verifiedLinesCount = order.lines.filter(l => l.verified).length;
 
     const unparsedHtml = order.unrecognised_text && order.unrecognised_text.length ? `
-      <div class="alert-banner warning" style="margin-top:0.75rem;">
+      <div class="alert-banner warning" role="alert" style="margin-top:0.75rem;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
         <div>
-          <strong>Unparsed Input Segments:</strong> ${order.unrecognised_text.map(t => `<code>${escapeHtml(t)}</code>`).join(', ')}
+          <strong>Unresolved request text — approval locked:</strong> ${order.unrecognised_text.map(t => `<code>${escapeHtml(t)}</code>`).join(', ')}
+          <div style="font-size:0.78rem; margin-top:0.2rem;">These request segments were not converted into order lines. Correct the message before approval.</div>
         </div>
       </div>
     ` : '';
@@ -1461,7 +1462,7 @@
       const search = $('products-search')?.value || '';
       const activeFilter = $('products-filter-active')?.value || '';
       const is_active = activeFilter === '' ? null : activeFilter === 'true';
-      
+
       const data = await api(`/api/products?search=${encodeURIComponent(search)}&is_active=${is_active !== null ? is_active : ''}`);
       renderProductsTable(data.records || []);
     } catch (err) {
@@ -1521,7 +1522,7 @@
       const isLowStock = inv.available_quantity <= inv.low_stock_threshold;
       const statusClass = isLowStock ? 'warning' : 'VERIFIED';
       const statusText = isLowStock ? 'Low Stock' : 'OK';
-      
+
       return `
       <tr>
         <td><span class="sku-pill">${escapeHtml(inv.sku)}</span></td>
@@ -1565,7 +1566,7 @@
     tbody.innerHTML = movements.map(m => {
       const deltaClass = m.quantity > 0 ? 'success' : 'danger';
       const deltaPrefix = m.quantity > 0 ? '+' : '';
-      
+
       return `
       <tr>
         <td>${m.id}</td>
@@ -1606,7 +1607,7 @@
 
     tbody.innerHTML = shipments.map(s => {
       const statusClass = s.status === 'delivered' ? 'success' : s.status === 'in_transit' ? 'VERIFIED' : s.status === 'delayed' ? 'warning' : 'DRAFT';
-      
+
       return `
       <tr>
         <td><span class="sku-pill">${escapeHtml(s.id.slice(0, 8))}…</span></td>
@@ -1680,7 +1681,7 @@
       const summary = await api('/api/dashboard/summary');
       if ($('bar-low-stock')) $('bar-low-stock').textContent = summary.low_stock_products;
       if ($('bar-in-transit')) $('bar-in-transit').textContent = summary.in_transit_shipments;
-      
+
       // Show demo stock label if demo mode is active
       if (summary.demo_mode && $('demo-stock-label')) {
         $('demo-stock-label').style.display = 'inline';
